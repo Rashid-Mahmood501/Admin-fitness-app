@@ -8,7 +8,6 @@ interface WorkoutPlan {
   muscleGroup: string;
   setType: string;
   reps: string;
-  image: FileList;
   video: FileList;
   equipments: { value: string }[];
   comments: string;
@@ -31,7 +30,6 @@ export default function WorkoutPlansPage() {
     const finalData = {
       ...data,
       equipments: data.equipments.map(e => e.value),
-      image: data.image[0],
       video: data.video[0]
     };
     console.log('Form submitted:', finalData);
@@ -70,15 +68,9 @@ export default function WorkoutPlansPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-            <div>
-              <label htmlFor="image" className="block text-sm font-bold text-gray-700 mb-2">Image</label>
-              <input type="file" id="image" accept="image/*" {...register("image")} className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer" required />
-            </div>
-            <div>
-              <label htmlFor="video" className="block text-sm font-bold text-gray-700 mb-2">Video</label>
-              <input type="file" id="video" accept="video/*" {...register("video")} className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer" />
-            </div>
+          <div>
+            <label htmlFor="video" className="block text-sm font-bold text-gray-700 mb-2">Video</label>
+            <input type="file" id="video" accept="video/*" {...register("video")} className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer" />
           </div>
           
           <div>

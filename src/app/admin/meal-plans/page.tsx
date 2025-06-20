@@ -5,6 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 interface MealPlan {
   name: string;
+  mealType: string;
   calories: number;
   protein: number;
   fat: number;
@@ -46,6 +47,31 @@ export default function MealPlansPage() {
               placeholder="Enter food name"
               required
             />
+          </div>
+          
+          <div>
+            <label htmlFor="mealType" className="block text-sm font-bold text-gray-700 mb-2">
+              Meal Type
+            </label>
+            <div className="relative">
+              <select
+                id="mealType"
+                {...register("mealType")}
+                className="w-full px-4 py-3 pr-10 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors appearance-none"
+                required
+              >
+                <option value="">Select meal type</option>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
