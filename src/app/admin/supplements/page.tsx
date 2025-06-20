@@ -54,7 +54,7 @@ export default function SupplementsPage() {
               id="description"
               {...register("description")}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 text-gray-700 placeholder:text-gray-400 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors resize-vertical"
+              className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors resize-vertical"
               placeholder="Enter supplement description..."
               required
             />

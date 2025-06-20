@@ -51,7 +51,7 @@ export default function WorkoutPlansPage() {
         </h2>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
             <div>
               <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">Workout Name</label>
               <input type="text" id="name" {...register("name")} className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors" placeholder="e.g., Dumbbell Incline Bench Press" required />
@@ -70,7 +70,7 @@ export default function WorkoutPlansPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
             <div>
               <label htmlFor="image" className="block text-sm font-bold text-gray-700 mb-2">Image</label>
               <input type="file" id="image" accept="image/*" {...register("image")} className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer" required />
@@ -87,11 +87,11 @@ export default function WorkoutPlansPage() {
               <div key={field.id} className="flex items-center space-x-2 mb-2">
                 <input
                   {...register(`equipments.${index}.value`)}
-                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                  className="flex-1 px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
                   placeholder={`Equipment ${index + 1}`}
                   required
                 />
-                <button type="button" onClick={() => remove(index)} className="bg-[#171616] text-white p-3 rounded-lg hover:bg-black transition-colors">-</button>
+                <button type="button" onClick={() => remove(index)} className="bg-[#171616] text-white p-3 rounded-lg hover:bg-black transition-colors flex-shrink-0">-</button>
               </div>
             ))}
             <button type="button" onClick={() => append({ value: "" })} className="mt-2 bg-[#171616] text-white py-2 px-4 rounded-lg text-sm hover:bg-black transition-colors">
