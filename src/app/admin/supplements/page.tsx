@@ -1,23 +1,39 @@
-'use client';
+"use client";
 
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import toast, { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from "react-hot-toast";
 
 interface Supplement {
   name: string;
   description: string;
 }
 
-
 export default function SupplementsPage() {
-  const { register, handleSubmit } = useForm<Supplement>();
+  const { register, handleSubmit, reset } = useForm<Supplement>();
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = (data: Supplement) => {
-    console.log('Form submitted:', data);
-    toast.success('Supplement data submitted!');
+  const onSubmit = async (data: Supplement) => {
+    setLoading(true);
+    try {
+      const response = await fetchWrapper("/admin/supplement/create", {
+        method: "POST",
+        body: data,
+      });
+      if (!response) {
+        throw new Error("Failed to add meal plan");
+      }
+      toast.success("Meal plan added successfully!");
+      reset();
+      setLoading(false);
+    } catch (err: any) {
+      toast.error("Failed to add meal plan");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
-
-
 
   return (
     <div className="space-y-6">
@@ -25,15 +41,18 @@ export default function SupplementsPage() {
         <span className="text-3xl">💊</span>
         <h1 className="text-3xl font-bold text-[#171616]">Supplements</h1>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
         <h2 className="text-2xl font-semibold text-[#171616] mb-6">
           Add New Supplement
         </h2>
-        
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-bold text-gray-700 mb-2"
+            >
               Supplement Name
             </label>
             <input
@@ -45,9 +64,12 @@ export default function SupplementsPage() {
               required
             />
           </div>
-          
+
           <div>
-            <label htmlFor="description" className="block text-sm font-bold text-gray-700 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-bold text-gray-700 mb-2"
+            >
               Description
             </label>
             <textarea
@@ -59,18 +81,16 @@ export default function SupplementsPage() {
               required
             />
           </div>
-          
+
           <button
             type="submit"
             className="w-full bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
           >
-            Add Supplement
+            {loading ? "Adding..." : "Add Supplement"}
           </button>
         </form>
       </div>
-      <Toaster
-      position="top-right"
-      />
+      <Toaster position="top-right" />
     </div>
   );
-} 
+}

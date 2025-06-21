@@ -1,7 +1,9 @@
-'use client';
+"use client";
 
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import toast, { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from "react-hot-toast";
 
 interface MealPlan {
   name: string;
@@ -14,12 +16,38 @@ interface MealPlan {
 }
 
 export default function MealPlansPage() {
-  const { register, handleSubmit } = useForm<MealPlan>();
+  const { register, handleSubmit, reset } = useForm<MealPlan>();
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = (data: MealPlan) => {
-    console.log('Form submitted:', data);
-    console.log('Image file:', data.image[0]);
-    toast.success('Meal plan data submitted!');
+  const onSubmit = async (data: MealPlan) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("mealType", data.mealType);
+      formData.append("calories", String(data.calories));
+      formData.append("protein", String(data.protein));
+      formData.append("fat", String(data.fat));
+      formData.append("carbs", String(data.carbs));
+      formData.append("image", data.image[0]);
+
+      const response = await fetchWrapper("/admin/meal/save", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      if (!response) {
+        throw new Error("Failed to add meal plan");
+      }
+      toast.success("Meal plan added successfully!");
+      reset();
+      setLoading(false);
+    } catch (err: any) {
+      toast.error("Failed to add meal plan");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,15 +56,18 @@ export default function MealPlansPage() {
         <span className="text-3xl">🍽️</span>
         <h1 className="text-3xl font-bold text-[#171616]">Meal Plans</h1>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
         <h2 className="text-2xl font-semibold text-[#171616] mb-6">
           Add New Meal Plan
         </h2>
-        
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-bold text-gray-700 mb-2"
+            >
               Food Name
             </label>
             <input
@@ -48,9 +79,12 @@ export default function MealPlansPage() {
               required
             />
           </div>
-          
+
           <div>
-            <label htmlFor="mealType" className="block text-sm font-bold text-gray-700 mb-2">
+            <label
+              htmlFor="mealType"
+              className="block text-sm font-bold text-gray-700 mb-2"
+            >
               Meal Type
             </label>
             <div className="relative">
@@ -67,16 +101,29 @@ export default function MealPlansPage() {
                 <option value="snack">Snack</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label htmlFor="calories" className="block text-sm font-bold text-gray-700 mb-2">
+              <label
+                htmlFor="calories"
+                className="block text-sm font-bold text-gray-700 mb-2"
+              >
                 Calories
               </label>
               <input
@@ -88,9 +135,12 @@ export default function MealPlansPage() {
                 required
               />
             </div>
-            
+
             <div>
-              <label htmlFor="protein" className="block text-sm font-bold text-gray-700 mb-2">
+              <label
+                htmlFor="protein"
+                className="block text-sm font-bold text-gray-700 mb-2"
+              >
                 Protein (g)
               </label>
               <input
@@ -103,9 +153,12 @@ export default function MealPlansPage() {
                 required
               />
             </div>
-            
+
             <div>
-              <label htmlFor="fat" className="block text-sm font-bold text-gray-700 mb-2">
+              <label
+                htmlFor="fat"
+                className="block text-sm font-bold text-gray-700 mb-2"
+              >
                 Fat (g)
               </label>
               <input
@@ -118,9 +171,12 @@ export default function MealPlansPage() {
                 required
               />
             </div>
-            
+
             <div>
-              <label htmlFor="carbs" className="block text-sm font-bold text-gray-700 mb-2">
+              <label
+                htmlFor="carbs"
+                className="block text-sm font-bold text-gray-700 mb-2"
+              >
                 Carbs (g)
               </label>
               <input
@@ -134,9 +190,12 @@ export default function MealPlansPage() {
               />
             </div>
           </div>
-          
+
           <div>
-            <label htmlFor="image" className="block text-sm font-bold text-gray-700 mb-2">
+            <label
+              htmlFor="image"
+              className="block text-sm font-bold text-gray-700 mb-2"
+            >
               Image
             </label>
             <input
@@ -148,16 +207,16 @@ export default function MealPlansPage() {
               required
             />
           </div>
-          
+
           <button
             type="submit"
             className="w-full bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
           >
-            Add Meal Plan
+            {loading ? "Adding..." : "Add Meal Plan"}
           </button>
         </form>
       </div>
       <Toaster position="top-right" />
     </div>
   );
-} 
+}
