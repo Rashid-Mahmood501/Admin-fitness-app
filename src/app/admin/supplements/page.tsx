@@ -18,7 +18,6 @@ export default function SupplementsPage() {
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [fetchingSupplements, setFetchingSupplements] = useState(true);
 
-  // Fetch all supplements on component mount
   useEffect(() => {
     fetchSupplements();
   }, []);
@@ -29,15 +28,28 @@ export default function SupplementsPage() {
         method: "GET",
       });
       console.log(response);
-      // Ensure response is an array, handle different response structures
-      const supplementsArray = Array.isArray(response) ? response : 
-                              (response?.data && Array.isArray(response.data)) ? response.data : 
-                              (response?.supplements && Array.isArray(response.supplements)) ? response.supplements : [];
-      setSupplements(supplementsArray);
+      const supplementsArray = Array.isArray(response)
+        ? response
+        : response?.data && Array.isArray(response.data)
+        ? response.data
+        : response?.supplements && Array.isArray(response.supplements)
+        ? response.supplements
+        : [];
+
+      const sortedSupplements = supplementsArray.sort(
+        (a: Supplement, b: Supplement) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        }
+      );
+
+      setSupplements(sortedSupplements);
     } catch (error) {
       toast.error("Failed to fetch supplements");
       console.error("Error fetching supplements:", error);
-      setSupplements([]); // Set empty array on error
+      setSupplements([]);
     } finally {
       setFetchingSupplements(false);
     }
@@ -151,22 +163,25 @@ export default function SupplementsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {Array.isArray(supplements) && supplements.map((supplement, index) => (
-                  <tr key={supplement._id || index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {supplement.name}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                      {supplement.description}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {supplement.createdAt 
-                        ? new Date(supplement.createdAt).toLocaleDateString()
-                        : "N/A"
-                      }
-                    </td>
-                  </tr>
-                ))}
+                {Array.isArray(supplements) &&
+                  supplements.map((supplement, index) => (
+                    <tr
+                      key={supplement._id || index}
+                      className="hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {supplement.name}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                        {supplement.description}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {supplement.createdAt
+                          ? new Date(supplement.createdAt).toLocaleDateString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
