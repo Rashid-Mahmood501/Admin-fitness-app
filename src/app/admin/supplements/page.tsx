@@ -1,18 +1,47 @@
 "use client";
 
 import { fetchWrapper } from "@/utils/fetchwraper";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 
 interface Supplement {
+  _id?: string;
   name: string;
   description: string;
+  createdAt?: string;
 }
 
 export default function SupplementsPage() {
   const { register, handleSubmit, reset } = useForm<Supplement>();
   const [loading, setLoading] = useState(false);
+  const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [fetchingSupplements, setFetchingSupplements] = useState(true);
+
+  // Fetch all supplements on component mount
+  useEffect(() => {
+    fetchSupplements();
+  }, []);
+
+  const fetchSupplements = async () => {
+    try {
+      const response = await fetchWrapper<any>("/admin/supplement/all", {
+        method: "GET",
+      });
+      console.log(response);
+      // Ensure response is an array, handle different response structures
+      const supplementsArray = Array.isArray(response) ? response : 
+                              (response?.data && Array.isArray(response.data)) ? response.data : 
+                              (response?.supplements && Array.isArray(response.supplements)) ? response.supplements : [];
+      setSupplements(supplementsArray);
+    } catch (error) {
+      toast.error("Failed to fetch supplements");
+      console.error("Error fetching supplements:", error);
+      setSupplements([]); // Set empty array on error
+    } finally {
+      setFetchingSupplements(false);
+    }
+  };
 
   const onSubmit = async (data: Supplement) => {
     setLoading(true);
@@ -26,7 +55,7 @@ export default function SupplementsPage() {
       }
       toast.success("Supplement added successfully!");
       reset();
-      setLoading(false);
+      await fetchSupplements();
     } catch (err: any) {
       toast.error("Failed to add supplement");
       throw err;
@@ -89,6 +118,59 @@ export default function SupplementsPage() {
             {loading ? "Adding..." : "Add Supplement"}
           </button>
         </form>
+      </div>
+
+      {/* Supplements Table */}
+      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+        <h2 className="text-2xl font-semibold text-[#171616] mb-6">
+          All Supplements
+        </h2>
+
+        {fetchingSupplements ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#EC1D13]"></div>
+          </div>
+        ) : supplements.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No supplements found. Add your first supplement above!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Created At
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {Array.isArray(supplements) && supplements.map((supplement, index) => (
+                  <tr key={supplement._id || index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {supplement.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {supplement.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {supplement.createdAt 
+                        ? new Date(supplement.createdAt).toLocaleDateString()
+                        : "N/A"
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       <Toaster position="top-right" />
     </div>

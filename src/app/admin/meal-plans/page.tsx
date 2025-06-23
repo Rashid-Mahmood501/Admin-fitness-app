@@ -1,11 +1,12 @@
 "use client";
 
 import { fetchWrapper } from "@/utils/fetchwraper";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 
 interface MealPlan {
+  _id?: string;
   name: string;
   mealType: string;
   calories: number;
@@ -13,11 +14,40 @@ interface MealPlan {
   fat: number;
   carbs: number;
   image: FileList;
+  imageUrl?: string;
+  createdAt?: string;
 }
 
 export default function MealPlansPage() {
   const { register, handleSubmit, reset } = useForm<MealPlan>();
   const [loading, setLoading] = useState(false);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [fetchingMealPlans, setFetchingMealPlans] = useState(true);
+
+  // Fetch all meal plans on component mount
+  useEffect(() => {
+    fetchMealPlans();
+  }, []);
+
+  const fetchMealPlans = async () => {
+    try {
+      const response = await fetchWrapper<any>("/admin/meal/all", {
+        method: "GET",
+      });
+      console.log(response);
+      // Ensure response is an array, handle different response structures
+      const mealPlansArray = Array.isArray(response) ? response : 
+                            (response?.data && Array.isArray(response.data)) ? response.data : 
+                            (response?.meals && Array.isArray(response.meals)) ? response.meals : [];
+      setMealPlans(mealPlansArray);
+    } catch (error) {
+      toast.error("Failed to fetch meal plans");
+      console.error("Error fetching meal plans:", error);
+      setMealPlans([]); // Set empty array on error
+    } finally {
+      setFetchingMealPlans(false);
+    }
+  };
 
   const onSubmit = async (data: MealPlan) => {
     setLoading(true);
@@ -41,7 +71,7 @@ export default function MealPlansPage() {
       }
       toast.success("Meal plan added successfully!");
       reset();
-      setLoading(false);
+      await fetchMealPlans();
     } catch (err: any) {
       toast.error("Failed to add meal plan");
       throw err;
@@ -215,6 +245,96 @@ export default function MealPlansPage() {
             {loading ? "Adding..." : "Add Meal Plan"}
           </button>
         </form>
+      </div>
+
+      {/* Meal Plans Table */}
+      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+        <h2 className="text-2xl font-semibold text-[#171616] mb-6">
+          All Meal Plans
+        </h2>
+
+        {fetchingMealPlans ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#EC1D13]"></div>
+          </div>
+        ) : mealPlans.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No meal plans found. Add your first meal plan above!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Image
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Meal Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Calories
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Protein (g)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Fat (g)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Carbs (g)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Created At
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {Array.isArray(mealPlans) && mealPlans.map((mealPlan, index) => (
+                  <tr key={mealPlan._id || index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <img
+                        src={mealPlan.imageUrl || "/placeholder.png"}
+                        alt={mealPlan.name}
+                        className="h-12 w-12 rounded-lg object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.png";
+                        }}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {mealPlan.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className="capitalize">{mealPlan.mealType}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mealPlan.calories}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mealPlan.protein}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mealPlan.fat}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mealPlan.carbs}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mealPlan.createdAt 
+                        ? new Date(mealPlan.createdAt).toLocaleDateString()
+                        : "N/A"
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       <Toaster position="top-right" />
     </div>
