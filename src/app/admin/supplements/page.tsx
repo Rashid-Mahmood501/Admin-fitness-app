@@ -22,13 +22,13 @@ export default function SupplementsPage() {
         body: data,
       });
       if (!response) {
-        throw new Error("Failed to add meal plan");
+        throw new Error("Failed to add supplement");
       }
-      toast.success("Meal plan added successfully!");
+      toast.success("Supplement added successfully!");
       reset();
       setLoading(false);
     } catch (err: any) {
-      toast.error("Failed to add meal plan");
+      toast.error("Failed to add supplement");
       throw err;
     } finally {
       setLoading(false);
