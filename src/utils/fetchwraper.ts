@@ -22,7 +22,7 @@ export async function fetchWrapper<T = any>(
     body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   };
 
-  const res = await fetch(`http://localhost:3000${url}`, fetchOptions);
+  const res = await fetch(`https://fitness-app-backend-42zi.onrender.com${url}`, fetchOptions);
 
   const contentType = res.headers.get("content-type");
   const isJson = contentType && contentType.includes("application/json");
