@@ -1,7 +1,7 @@
 "use client";
 
 import { fetchWrapper } from "@/utils/fetchwraper";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 

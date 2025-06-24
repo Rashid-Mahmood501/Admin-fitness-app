@@ -1,7 +1,7 @@
 "use client";
 
 import { fetchWrapper } from "@/utils/fetchwraper";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -16,6 +16,7 @@ interface MealPlan {
   image: FileList;
   imageUrl?: string;
   createdAt?: string;
+  type?: string;
 }
 
 export default function MealPlansPage() {
@@ -36,9 +37,13 @@ export default function MealPlansPage() {
       });
       console.log(response);
       // Ensure response is an array, handle different response structures
-      const mealPlansArray = Array.isArray(response) ? response : 
-                            (response?.data && Array.isArray(response.data)) ? response.data : 
-                            (response?.meals && Array.isArray(response.meals)) ? response.meals : [];
+      const mealPlansArray = Array.isArray(response)
+        ? response
+        : response?.data && Array.isArray(response.data)
+        ? response.data
+        : response?.meals && Array.isArray(response.meals)
+        ? response.meals
+        : [];
       setMealPlans(mealPlansArray);
     } catch (error) {
       toast.error("Failed to fetch meal plans");
@@ -287,50 +292,47 @@ export default function MealPlansPage() {
                   <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
                     Carbs (g)
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Created At
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {Array.isArray(mealPlans) && mealPlans.map((mealPlan, index) => (
-                  <tr key={mealPlan._id || index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <img
-                        src={mealPlan.imageUrl || "/placeholder.png"}
-                        alt={mealPlan.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.png";
-                        }}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {mealPlan.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className="capitalize">{mealPlan.mealType}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {mealPlan.calories}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {mealPlan.protein}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {mealPlan.fat}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {mealPlan.carbs}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {mealPlan.createdAt 
-                        ? new Date(mealPlan.createdAt).toLocaleDateString()
-                        : "N/A"
-                      }
-                    </td>
-                  </tr>
-                ))}
+                {Array.isArray(mealPlans) &&
+                  mealPlans.map((mealPlan, index) => (
+                    <tr
+                      key={mealPlan._id || index}
+                      className="hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <img
+                          src={(mealPlan.image as any) || "/placeholder.png"}
+                          alt={mealPlan.name}
+                          className="h-12 w-12 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.png";
+                          }}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {mealPlan.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className="capitalize">
+                          {mealPlan?.type as any}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.calories}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.protein}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.fat}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.carbs}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

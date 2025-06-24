@@ -1,10 +1,12 @@
 "use client";
 
 import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 
 interface WorkoutPlan {
+  _id?: string;
   name: string;
   muscleGroup: string;
   setType: string;
@@ -21,13 +23,44 @@ export default function WorkoutPlansPage() {
       equipments: [{ value: "" }],
     },
   });
+  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+  const [fetchingMealPlans, setFetchingMealPlans] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  const fetchWorkout = async () => {
+    try {
+      const response = await fetchWrapper<any>("/admin/workout/all", {
+        method: "GET",
+      });
+      // Ensure response is an array, handle different response structures
+      const mealPlansArray = Array.isArray(response)
+        ? response
+        : response?.data && Array.isArray(response.data)
+        ? response.data
+        : response?.workouts && Array.isArray(response.workouts)
+        ? response.workouts
+        : [];
+      setWorkoutPlans(mealPlansArray);
+    } catch (error) {
+      toast.error("Failed to fetch meal plans");
+      console.error("Error fetching meal plans:", error);
+      setWorkoutPlans([]); // Set empty array on error
+    } finally {
+      setFetchingMealPlans(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorkout();
+  }, []);
+  console.log("Workout Plans:", workoutPlans);
   const { fields, append, remove } = useFieldArray({
     control,
     name: "equipments",
   });
 
   const onSubmit = async (data: WorkoutPlan) => {
+    setLoading(true);
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("muscleGroup", data.muscleGroup);
@@ -50,11 +83,14 @@ export default function WorkoutPlansPage() {
       });
 
       toast.success("Workout plan added!");
+      fetchWorkout();
       console.log("Saved workout:", res.workout);
       reset();
+      setLoading(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to add workout plan");
       console.error(err);
+      setLoading(false);
     }
   };
 
@@ -218,11 +254,100 @@ export default function WorkoutPlansPage() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
           >
-            Add Workout Plan
+            {loading ? "Adding..." : "Add Workout Plan"}
           </button>
         </form>
+      </div>
+      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+        <h2 className="text-2xl font-semibold text-[#171616] mb-6">
+          All Workout
+        </h2>
+
+        {fetchingMealPlans ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#EC1D13]"></div>
+          </div>
+        ) : workoutPlans.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No Workout found. Add some!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Muscle Group
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Set Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Reps
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Equipments
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Comments
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    suggestion
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {Array.isArray(workoutPlans) &&
+                  workoutPlans.map((mealPlan, index) => (
+                    <tr
+                      key={mealPlan._id || index}
+                      className="hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {mealPlan.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className="capitalize">
+                          {mealPlan.muscleGroup}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.setType}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.reps}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.equipments.map((e, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mr-2 mb-2"
+                          >
+                            {e as any}
+                          </span>
+                        ))}
+                      </td>
+                      <td
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                        title={mealPlan.comments}
+                      >
+                        {mealPlan.comments.slice(0, 15) + "..."}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.suggestion}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       <Toaster position="top-right" />
     </div>
