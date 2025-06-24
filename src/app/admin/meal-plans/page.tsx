@@ -44,7 +44,15 @@ export default function MealPlansPage() {
         : response?.meals && Array.isArray(response.meals)
         ? response.meals
         : [];
-      setMealPlans(mealPlansArray);
+      
+      // Sort by creation date (newest first)
+      const sortedMealPlans = mealPlansArray.sort((a: any, b: any) => {
+        const dateA = new Date(a.createdAt || a._id || 0);
+        const dateB = new Date(b.createdAt || b._id || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      setMealPlans(sortedMealPlans);
     } catch (error) {
       toast.error("Failed to fetch meal plans");
       console.error("Error fetching meal plans:", error);

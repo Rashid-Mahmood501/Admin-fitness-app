@@ -40,7 +40,15 @@ export default function WorkoutPlansPage() {
         : response?.workouts && Array.isArray(response.workouts)
         ? response.workouts
         : [];
-      setWorkoutPlans(mealPlansArray);
+      
+      // Sort by creation date (newest first)
+      const sortedWorkoutPlans = mealPlansArray.sort((a: any, b: any) => {
+        const dateA = new Date(a.createdAt || a._id || 0);
+        const dateB = new Date(b.createdAt || b._id || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      setWorkoutPlans(sortedWorkoutPlans);
     } catch (error) {
       toast.error("Failed to fetch meal plans");
       console.error("Error fetching meal plans:", error);
