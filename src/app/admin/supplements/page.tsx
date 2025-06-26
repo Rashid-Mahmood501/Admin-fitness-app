@@ -36,16 +36,7 @@ export default function SupplementsPage() {
         ? response.supplements
         : [];
 
-      const sortedSupplements = supplementsArray.sort(
-        (a: Supplement, b: Supplement) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-      );
-
-      setSupplements(sortedSupplements);
+      setSupplements(supplementsArray);
     } catch (error) {
       toast.error("Failed to fetch supplements");
       console.error("Error fetching supplements:", error);

@@ -42,16 +42,7 @@ export default function WorkoutPlansPage() {
         ? response.workouts
         : [];
       
-        const sortedWorkoutPlans = workoutPlansArray.sort(
-          (a: WorkoutPlan, b: WorkoutPlan) => {
-            if (!a.createdAt || !b.createdAt) return 0;
-            return (
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            );
-          }
-        );
-      
-      setWorkoutPlans(sortedWorkoutPlans);
+      setWorkoutPlans(workoutPlansArray);
     } catch (error) {
       toast.error("Failed to fetch meal plans");
       console.error("Error fetching meal plans:", error);
@@ -311,6 +302,9 @@ export default function WorkoutPlansPage() {
                   <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
                     suggestion
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Created At
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -352,6 +346,11 @@ export default function WorkoutPlansPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {mealPlan.suggestion}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {mealPlan.createdAt
+                          ? new Date(mealPlan.createdAt).toLocaleDateString()
+                          : "N/A"}
                       </td>
                     </tr>
                   ))}
