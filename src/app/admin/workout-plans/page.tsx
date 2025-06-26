@@ -15,6 +15,7 @@ interface WorkoutPlan {
   equipments: { value: string }[];
   comments: string;
   suggestion?: string;
+  createdAt?: string;
 }
 
 export default function WorkoutPlansPage() {
@@ -33,7 +34,7 @@ export default function WorkoutPlansPage() {
         method: "GET",
       });
       // Ensure response is an array, handle different response structures
-      const mealPlansArray = Array.isArray(response)
+      const workoutPlansArray = Array.isArray(response)
         ? response
         : response?.data && Array.isArray(response.data)
         ? response.data
@@ -41,12 +42,14 @@ export default function WorkoutPlansPage() {
         ? response.workouts
         : [];
       
-      // Sort by creation date (newest first)
-      const sortedWorkoutPlans = mealPlansArray.sort((a: any, b: any) => {
-        const dateA = new Date(a.createdAt || a._id || 0);
-        const dateB = new Date(b.createdAt || b._id || 0);
-        return dateB.getTime() - dateA.getTime();
-      });
+        const sortedWorkoutPlans = workoutPlansArray.sort(
+          (a: WorkoutPlan, b: WorkoutPlan) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return (
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+          }
+        );
       
       setWorkoutPlans(sortedWorkoutPlans);
     } catch (error) {
