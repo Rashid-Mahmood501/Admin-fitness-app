@@ -12,7 +12,7 @@ interface WorkoutPlan {
   setType: string;
   reps: string;
   video: FileList;
-  equipments: { value: string }[];
+  equipments: { value: string; image: any }[];
   comments: string;
   suggestion?: string;
   createdAt?: string;
@@ -21,7 +21,7 @@ interface WorkoutPlan {
 export default function WorkoutPlansPage() {
   const { register, handleSubmit, control, reset } = useForm<WorkoutPlan>({
     defaultValues: {
-      equipments: [{ value: "" }],
+      equipments: [{ value: "", image: null }],
     },
   });
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
@@ -41,7 +41,7 @@ export default function WorkoutPlansPage() {
         : response?.workouts && Array.isArray(response.workouts)
         ? response.workouts
         : [];
-      
+
       setWorkoutPlans(workoutPlansArray);
     } catch (error) {
       toast.error("Failed to fetch meal plans");
@@ -193,17 +193,32 @@ export default function WorkoutPlansPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Equipments
-            </label>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center space-x-2 mb-2">
-                <input
-                  {...register(`equipments.${index}.value`)}
-                  className="flex-1 px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                  placeholder={`Equipment ${index + 1}`}
-                  required
-                />
+                <div className="flex flex-col w-full">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Equipments
+                  </label>
+                  <input
+                    {...register(`equipments.${index}.value`)}
+                    className="flex-1 px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                    placeholder={`Equipment ${index + 1}`}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Image
+                  </label>
+                  <input
+                    type="file"
+                    id="image"
+                    accept="image/*"
+                    {...register(`equipments.${index}.image`)}
+                    className="flex-1 px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                    required
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => remove(index)}
@@ -215,7 +230,7 @@ export default function WorkoutPlansPage() {
             ))}
             <button
               type="button"
-              onClick={() => append({ value: "" })}
+              onClick={() => append({ value: "", image: null })}
               className="mt-2 bg-[#171616] text-white py-2 px-4 rounded-lg text-sm hover:bg-black transition-colors"
             >
               Add Equipment

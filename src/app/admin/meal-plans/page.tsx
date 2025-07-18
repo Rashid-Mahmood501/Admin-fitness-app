@@ -17,6 +17,7 @@ interface MealPlan {
   imageUrl?: string;
   createdAt?: string;
   type?: string;
+  recipe?: string;
 }
 
 export default function MealPlansPage() {
@@ -44,7 +45,7 @@ export default function MealPlansPage() {
         : response?.meals && Array.isArray(response.meals)
         ? response.meals
         : [];
-      
+
       setMealPlans(mealPlansArray);
     } catch (error) {
       toast.error("Failed to fetch meal plans");
@@ -65,6 +66,7 @@ export default function MealPlansPage() {
       formData.append("protein", String(data.protein));
       formData.append("fat", String(data.fat));
       formData.append("carbs", String(data.carbs));
+      formData.append("recipe", String(data.recipe));
       formData.append("image", data.image[0]);
 
       const response = await fetchWrapper("/admin/meal/save", {
@@ -241,6 +243,20 @@ export default function MealPlansPage() {
               {...register("image")}
               className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
               required
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="image"
+              className="block text-sm font-bold text-gray-700 mb-2"
+            >
+              How to Make
+            </label>
+            <textarea
+              id="recipe"
+              {...register("recipe")}
+              rows={5}
+              className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
             />
           </div>
 
