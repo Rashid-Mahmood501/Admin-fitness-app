@@ -429,7 +429,7 @@ export default function MealPlansPage() {
             <div
               key={plan.id}
               onClick={() => handlePlanSelect(plan.id)}
-              className="bg-white rounded-lg border border-black p-6 cursor-pointer"
+              className="bg-white rounded-lg border border-black p-6 cursor-pointer hover:shadow-lg transition-all duration-200"
             >
               <div className="flex justify-center mb-4">
                 <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">

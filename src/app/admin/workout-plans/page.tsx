@@ -1,100 +1,505 @@
 "use client";
 
-import { fetchWrapper } from "@/utils/fetchwraper";
-import { useEffect, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import toast, { Toaster } from "react-hot-toast";
+import Image from "next/image";
+import { useState } from "react";
 
-interface WorkoutPlan {
-  _id?: string;
+interface Category {
+  id: string;
   name: string;
-  muscleGroup: string;
-  setType: string;
-  reps: string;
-  video: FileList;
-  equipments: { value: string }[];
-  comments: string;
-  suggestion?: string;
-  createdAt?: string;
 }
 
 export default function WorkoutPlansPage() {
-  const { register, handleSubmit, control, reset } = useForm<WorkoutPlan>({
-    defaultValues: {
-      equipments: [{ value: "" }],
+  const [selectedView, setSelectedView] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: "1", name: "Chest" },
+    { id: "2", name: "Arm" },
+  ]);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<"edit" | "create">("create");
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryName, setCategoryName] = useState("");
+  const [showCreateExerciseForm, setShowCreateExerciseForm] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [exerciseForm, setExerciseForm] = useState({
+    workoutName: "",
+    setType: "",
+    video: null as File | null,
+    muscleGroup: "",
+    reps: "",
+    additionalComments: "",
+    workoutSuggestion: ""
+  });
+
+  const workoutPlanTypes = [
+    {
+      id: "muscle-mass",
+      title: "Create exercise plan for muscle mass",
     },
-  });
-  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
-  const [fetchingMealPlans, setFetchingMealPlans] = useState(false);
-  const [loading, setLoading] = useState(false);
+    {
+      id: "weight-loss",
+      title: "Create exercise plan for Loss weight",
+    },
+    {
+      id: "bulk-up",
+      title: "Create exercise plan for Bulk Up",
+    },
+    {
+      id: "categories",
+      title: "Categories",
+    },
+    {
+      id: "exercises",
+      title: "Excercises",
+    },
+  ];
 
-  const fetchWorkout = async () => {
-    try {
-      const response = await fetchWrapper<any>("/admin/workout/all", {
-        method: "GET",
-      });
-      // Ensure response is an array, handle different response structures
-      const workoutPlansArray = Array.isArray(response)
-        ? response
-        : response?.data && Array.isArray(response.data)
-        ? response.data
-        : response?.workouts && Array.isArray(response.workouts)
-        ? response.workouts
-        : [];
-      
-      setWorkoutPlans(workoutPlansArray);
-    } catch (error) {
-      toast.error("Failed to fetch meal plans");
-      console.error("Error fetching meal plans:", error);
-      setWorkoutPlans([]); // Set empty array on error
-    } finally {
-      setFetchingMealPlans(false);
+  const handlePlanSelect = (planId: string) => {
+    if (planId === "categories") {
+      setSelectedView("categories");
+    } else if (planId === "exercises") {
+      setSelectedView("exercises");
+    } else {
+      console.log(`Selected workout plan: ${planId}`);
     }
   };
 
-  useEffect(() => {
-    fetchWorkout();
-  }, []);
-  console.log("Workout Plans:", workoutPlans);
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "equipments",
-  });
+  const handleBackToMain = () => {
+    setSelectedView(null);
+  };
 
-  const onSubmit = async (data: WorkoutPlan) => {
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("muscleGroup", data.muscleGroup);
-    formData.append("setType", data.setType);
-    formData.append("reps", data.reps);
-    formData.append("comments", data.comments);
-    if (data.suggestion) formData.append("suggestion", data.suggestion);
+  const handleEditCategory = (category: Category) => {
+    setModalType("edit");
+    setEditingCategory(category);
+    setCategoryName(category.name);
+    setShowModal(true);
+  };
 
-    data.equipments.forEach((e) => formData.append("equipments", e.value));
+  const handleCreateCategory = () => {
+    setModalType("create");
+    setEditingCategory(null);
+    setCategoryName("");
+    setShowModal(true);
+  };
 
-    if (data.video?.length) {
-      formData.append("video", data.video[0]);
+  const handleSubmit = () => {
+    if (!categoryName.trim()) return;
+
+    if (modalType === "create") {
+      const newCategory: Category = {
+        id: Date.now().toString(),
+        name: categoryName.trim(),
+      };
+      setCategories([newCategory, ...categories]); // Add to top
+    } else if (modalType === "edit" && editingCategory) {
+      setCategories(categories.map(cat => 
+        cat.id === editingCategory.id 
+          ? { ...cat, name: categoryName.trim() }
+          : cat
+      ));
     }
 
-    try {
-      const res = await fetchWrapper("/admin/workout/save", {
-        method: "POST",
-        body: formData,
-        isFormData: true,
-      });
+    setShowModal(false);
+    setCategoryName("");
+    setEditingCategory(null);
+  };
 
-      toast.success("Workout plan added!");
-      fetchWorkout();
-      console.log("Saved workout:", res.workout);
-      reset();
-      setLoading(false);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add workout plan");
-      console.error(err);
-      setLoading(false);
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setCategoryName("");
+    setEditingCategory(null);
+  };
+
+  const handleCreateExercise = () => {
+    setShowCreateExerciseForm(true);
+  };
+
+  const handleBackToExercises = () => {
+    setShowCreateExerciseForm(false);
+    setSelectedCategory("");
+    setExerciseForm({
+      workoutName: "",
+      setType: "",
+      video: null,
+      muscleGroup: "",
+      reps: "",
+      additionalComments: "",
+      workoutSuggestion: ""
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setExerciseForm(prev => ({ ...prev, video: e.target.files![0] }));
     }
   };
+
+  const handleFormSubmit = () => {
+    console.log("Creating exercise:", exerciseForm);
+    // Here you would typically send the data to your API
+    handleBackToExercises();
+  };
+
+  const handleEditExercise = (exerciseId: string) => {
+    console.log(`Editing exercise: ${exerciseId}`);
+  };
+
+  if (showCreateExerciseForm) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl">💪</span>
+            <h1 className="text-3xl font-bold text-[#171616]">Workout Plans</h1>
+          </div>
+          <button
+            onClick={handleBackToExercises}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Back to Exercises
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+          <h2 className="text-2xl font-bold text-[#171616] mb-6">Create New Exercise</h2>
+          <p className="text-gray-600 mb-6">Select category in which you want to add exercise</p>
+          
+          {/* Category Selection */}
+          <div className="flex space-x-4 mb-8">
+            <button 
+              onClick={() => setSelectedCategory("chest")}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                selectedCategory === "chest" 
+                  ? "bg-[#EC1D13] text-white" 
+                  : "bg-white text-black border border-black hover:bg-gray-50"
+              }`}
+            >
+              Chest
+            </button>
+            <button 
+              onClick={() => setSelectedCategory("arm")}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                selectedCategory === "arm" 
+                  ? "bg-[#EC1D13] text-white" 
+                  : "bg-white text-black border border-black hover:bg-gray-50"
+              }`}
+            >
+              Arm
+            </button>
+          </div>
+
+          {/* Form Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Left Column */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Workout Name
+                </label>
+                <input
+                  type="text"
+                  value={exerciseForm.workoutName}
+                  onChange={(e) => setExerciseForm(prev => ({ ...prev, workoutName: e.target.value }))}
+                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                  placeholder="e.g., Dumbbell Incline Bench Press"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Set Type
+                </label>
+                <input
+                  type="text"
+                  value={exerciseForm.setType}
+                  onChange={(e) => setExerciseForm(prev => ({ ...prev, setType: e.target.value }))}
+                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                  placeholder="e.g., Normal Set"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Video
+                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                Choose File
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileChange}
+                      className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
+                      />
+                  </label>
+                
+                </div>
+            
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Muscle Group
+                </label>
+                <input
+                  type="text"
+                  value={exerciseForm.muscleGroup}
+                  onChange={(e) => setExerciseForm(prev => ({ ...prev, muscleGroup: e.target.value }))}
+                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                  placeholder="e.g., Chest"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Reps
+                </label>
+                <input
+                  type="text"
+                  value={exerciseForm.reps}
+                  onChange={(e) => setExerciseForm(prev => ({ ...prev, reps: e.target.value }))}
+                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                  placeholder="e.g., 10/10/10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Comments */}
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Additional Comments
+            </label>
+            <textarea
+              value={exerciseForm.additionalComments}
+              onChange={(e) => setExerciseForm(prev => ({ ...prev, additionalComments: e.target.value }))}
+              rows={4}
+              className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors resize-vertical"
+              placeholder="Add any additional comments or instructions..."
+            />
+          </div>
+
+          {/* Workout Suggestion (Optional) */}
+          <div className="mb-8">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Workout Suggestion (Optional)
+            </label>
+            <input
+              type="text"
+              value={exerciseForm.workoutSuggestion}
+              onChange={(e) => setExerciseForm(prev => ({ ...prev, workoutSuggestion: e.target.value }))}
+              className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+              placeholder="e.g., Cardio 40min"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-4">
+            <button
+              onClick={handleBackToExercises}
+              className="w-[320px] px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            >
+              Add Alternative
+            </button>
+            <button
+              onClick={handleFormSubmit}
+              className="w-[320px] px-6 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors"
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedView === "exercises") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl">💪</span>
+            <h1 className="text-3xl font-bold text-[#171616]">Workout Plans</h1>
+          </div>
+          <button
+            onClick={handleBackToMain}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Back to Workout Plans
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-[#171616]">Excercises</h2>
+            <button
+              onClick={handleCreateExercise}
+              className="flex items-center space-x-2 px-4 py-2 border border-black rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">+</span>
+              </div>
+              <span className="text-black font-medium">Create Excercise</span>
+            </button>
+          </div>
+
+          <div className="flex space-x-4 mb-8">
+            <button className="px-6 py-2 bg-[#EC1D13] text-white rounded-lg font-medium">
+              Chest
+            </button>
+            <button className="px-6 py-2 bg-white text-black border border-black rounded-lg font-medium hover:bg-gray-50">
+              Arm
+            </button>
+          </div>
+
+          <div className="space-y-8">
+            <div className="border border-black rounded-lg p-6">
+              <div className="flex gap-6 items-center">
+                <div>
+                  <div className="relative bg-white border border-black rounded-lg overflow-hidden w-[320px]">
+                    <div className="h-48 bg-gray-200 relative">
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                        <Image src="/exercise_image.png" alt="Exercise Image" width={320} height={200} />
+                      </div>
+                      <div className="absolute top-4 right-4">
+                        <button
+                          onClick={() => handleEditExercise("1")}
+                          className="w-8 h-8 bg-white border border-black rounded-full flex items-center justify-center hover:bg-gray-50"
+                        >
+                          <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="absolute bottom-4 left-4 text-white">
+                        <h3 className="text-lg font-semibold">Incline Chest Press</h3>
+                        <p className="text-sm">Reps 10/10/10</p>
+                        <span className="bg-[#EC1D13] text-white px-3 py-1 rounded text-sm">Normal Set</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-64">
+                  <h3 className="font-bold text-[#171616] mb-2">Equipment Options</h3>
+                  <p className="text-gray-500">Not found</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedView === "categories") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl">💪</span>
+            <h1 className="text-3xl font-bold text-[#171616]">Workout Plans</h1>
+          </div>
+          <button
+            onClick={handleBackToMain}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Back to Workout Plans
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+          <h2 className="text-2xl font-bold text-[#171616] mb-6">Categories</h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="bg-white rounded-lg border border-black p-6 relative"
+              >
+                <button
+                  onClick={() => handleEditCategory(category)}
+                  className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <svg
+                    className="w-4 h-4 text-black"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </button>
+                <h3 className="text-base font-medium text-[#171616] text-center">
+                  {category.name}
+                </h3>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <div
+              onClick={handleCreateCategory}
+              className="bg-white rounded-lg border border-black p-6 cursor-pointer hover:shadow-lg transition-all duration-200 w-64"
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">+</span>
+                </div>
+              </div>
+              <h3 className="text-base font-medium text-[#171616] text-center">
+                Create New Category
+              </h3>
+            </div>
+          </div>
+        </div>
+
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4">
+              <h3 className="text-2xl font-bold text-[#171616] mb-6">
+                {modalType === "create" ? "Create New Category" : "Edit Category"}
+              </h3>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                  placeholder="Enter category name"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  onClick={handleCloseModal}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!categoryName.trim()}
+                  className="flex-1 bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {modalType === "create" ? "Create" : "Update"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -104,262 +509,48 @@ export default function WorkoutPlansPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
-        <h2 className="text-2xl font-semibold text-[#171616] mb-6">
-          Add New Workout Plan
-        </h2>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-bold text-gray-700 mb-2"
-              >
-                Workout Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                {...register("name")}
-                className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                placeholder="e.g., Dumbbell Incline Bench Press"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="muscleGroup"
-                className="block text-sm font-bold text-gray-700 mb-2"
-              >
-                Muscle Group
-              </label>
-              <input
-                type="text"
-                id="muscleGroup"
-                {...register("muscleGroup")}
-                className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                placeholder="e.g., Chest"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="setType"
-                className="block text-sm font-bold text-gray-700 mb-2"
-              >
-                Set Type
-              </label>
-              <input
-                type="text"
-                id="setType"
-                {...register("setType")}
-                className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                placeholder="e.g., Normal Set"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="reps"
-                className="block text-sm font-bold text-gray-700 mb-2"
-              >
-                Reps
-              </label>
-              <input
-                type="text"
-                id="reps"
-                {...register("reps")}
-                className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                placeholder="e.g., 10/10/10"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="video"
-              className="block text-sm font-bold text-gray-700 mb-2"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {workoutPlanTypes.slice(0, 3).map((plan) => (
+            <div
+              key={plan.id}
+              onClick={() => handlePlanSelect(plan.id)}
+              className="bg-white rounded-lg border border-black p-6 cursor-pointer hover:shadow-lg transition-all duration-200"
             >
-              Video
-            </label>
-            <input
-              type="file"
-              id="video"
-              accept="video/*"
-              {...register("video")}
-              className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Equipments
-            </label>
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center space-x-2 mb-2">
-                <input
-                  {...register(`equipments.${index}.value`)}
-                  className="flex-1 px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                  placeholder={`Equipment ${index + 1}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="bg-[#171616] text-white p-3 rounded-lg hover:bg-black transition-colors flex-shrink-0"
-                >
-                  -
-                </button>
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">+</span>
+                </div>
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => append({ value: "" })}
-              className="mt-2 bg-[#171616] text-white py-2 px-4 rounded-lg text-sm hover:bg-black transition-colors"
-            >
-              Add Equipment
-            </button>
-          </div>
 
-          <div>
-            <label
-              htmlFor="comments"
-              className="block text-sm font-bold text-gray-700 mb-2"
-            >
-              Additional Comments
-            </label>
-            <textarea
-              id="comments"
-              {...register("comments")}
-              rows={4}
-              className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-              placeholder="Add any additional comments or instructions..."
-            ></textarea>
-          </div>
+              <h3 className="text-base font-medium text-[#171616] text-center">
+                {plan.title}
+              </h3>
+            </div>
+          ))}
+        </div>
 
-          <div>
-            <label
-              htmlFor="suggestion"
-              className="block text-sm font-bold text-gray-700 mb-2"
-            >
-              Workout Suggestion (Optional)
-            </label>
-            <input
-              type="text"
-              id="suggestion"
-              {...register("suggestion")}
-              className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-              placeholder="e.g., Cardio 40min"
-            />
-          </div>
+        <div className="border-t border-gray-200 mb-8"></div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
-          >
-            {loading ? "Adding..." : "Add Workout Plan"}
-          </button>
-        </form>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {workoutPlanTypes.slice(3, 5).map((plan) => (
+            <div
+              key={plan.id}
+              onClick={() => handlePlanSelect(plan.id)}
+              className="bg-white rounded-lg border border-black p-6 cursor-pointer hover:shadow-lg transition-all duration-200"
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">+</span>
+                </div>
+              </div>
+
+              <h3 className="text-base font-medium text-[#171616] text-center">
+                {plan.title}
+              </h3>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
-        <h2 className="text-2xl font-semibold text-[#171616] mb-6">
-          All Workout
-        </h2>
-
-        {fetchingMealPlans ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#EC1D13]"></div>
-          </div>
-        ) : workoutPlans.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No Workout found. Add some!</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Muscle Group
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Set Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Reps
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Equipments
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Comments
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    suggestion
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
-                    Created At
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {Array.isArray(workoutPlans) &&
-                  workoutPlans.map((mealPlan, index) => (
-                    <tr
-                      key={mealPlan._id || index}
-                      className="hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {mealPlan.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className="capitalize">
-                          {mealPlan.muscleGroup}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {mealPlan.setType}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {mealPlan.reps}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {mealPlan.equipments.map((e, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mr-2 mb-2"
-                          >
-                            {e as any}
-                          </span>
-                        ))}
-                      </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        title={mealPlan.comments}
-                      >
-                        {mealPlan.comments.slice(0, 15) + "..."}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {mealPlan.suggestion}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {mealPlan.createdAt
-                          ? new Date(mealPlan.createdAt).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-      <Toaster position="top-right" />
     </div>
   );
 }
