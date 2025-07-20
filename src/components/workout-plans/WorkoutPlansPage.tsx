@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { DaySelectionStep } from "./steps/DaySelectionStep";
 import { CategoriesView } from "./views/CategoriesView";

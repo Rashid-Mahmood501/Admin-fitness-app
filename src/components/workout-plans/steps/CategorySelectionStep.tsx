@@ -94,7 +94,7 @@ export function CategorySelectionStep({
         <button
           onClick={onCreatePlan}
           disabled={isCreateButtonDisabled()}
-          className="px-8 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-1.5 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Create
         </button>
