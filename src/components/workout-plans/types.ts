@@ -8,6 +8,15 @@ export interface Category {
   name: string;
 }
 
+export interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  reps: string;
+  setType: string;
+  image: string;
+}
+
 export interface ExerciseForm {
   workoutName: string;
   setType: string;

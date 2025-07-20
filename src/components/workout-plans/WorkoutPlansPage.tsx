@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DaySelectionStep } from "./steps/DaySelectionStep";
 import { CategoriesView } from "./views/CategoriesView";
-import { ExercisesView } from "./views/ExercisesView";
+import { ExercisesView } from "./views/exercises/ExercisesView";
 import { WorkoutPlanTypes } from "./types";
 import { WorkoutPlanHeader } from "./WorkoutPlanHeader";
 import { CategorySelectionStep } from "./steps/CategorySelectionStep";
