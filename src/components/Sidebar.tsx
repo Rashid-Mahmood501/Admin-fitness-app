@@ -23,6 +23,11 @@ const Sidebar = () => {
       name: 'Supplements',
       href: '/admin/supplements',
       icon: '💊'
+    },
+    {
+      name: 'Bookings',
+      href: '/admin/bookings',
+      icon: '📅'
     }
   ];
 
