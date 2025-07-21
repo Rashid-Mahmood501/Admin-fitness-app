@@ -24,6 +24,7 @@ export default function WorkoutPlansPage() {
   const [showMultiStepFlow, setShowMultiStepFlow] = useState(false);
   const [currentDay, setCurrentDay] = useState<number>(1);
   const [workoutPlanId, setWorkoutPlanId] = useState<string>("");
+  const [creatingPlan, setCreatingPlan] = useState(false);
 
   const [selectedView, setSelectedView] = useState<string | null>(null);
 
@@ -102,6 +103,7 @@ export default function WorkoutPlansPage() {
   };
 
   const handleCreateWorkoutPlan = async () => {
+    setCreatingPlan(true);
     try {
       const response = await fetchWrapper("/admin/workout-plan/save", {
         method: "POST",
@@ -114,13 +116,14 @@ export default function WorkoutPlansPage() {
       }
     } catch (error) {
       console.error("Error creating workout plan:", error);
+    } finally {
+      setCreatingPlan(false);
+      setShowMultiStepFlow(false);
+      setCurrentStep("days");
+      setSelectedDays([]);
+      setDayCategories({});
+      setDayExercises({});
     }
-
-    setShowMultiStepFlow(false);
-    setCurrentStep("days");
-    setSelectedDays([]);
-    setDayCategories({});
-    setDayExercises({});
   };
 
   if (selectedView === "categories") {
@@ -155,6 +158,7 @@ export default function WorkoutPlansPage() {
               onCategorySelection={handleCategorySelection}
               onExerciseSelection={() => setCurrentStep("exercises")}
               onCreatePlan={handleCreateWorkoutPlan}
+              creatingPlan={creatingPlan}
             />
           )}
 

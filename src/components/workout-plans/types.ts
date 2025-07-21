@@ -45,6 +45,7 @@ export interface CategorySelectionStepProps {
   onCategorySelection: (day: number, category: string) => void;
   onExerciseSelection: () => void;
   onCreatePlan: () => void;
+  creatingPlan?: boolean;
 }
 
 export interface ExerciseSelectionStepProps {

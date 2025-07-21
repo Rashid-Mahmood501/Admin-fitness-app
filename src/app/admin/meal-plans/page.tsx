@@ -265,7 +265,7 @@ export default function MealPlansPage() {
             {getPlanTitle(selectedPlan)}
           </h2>
 
-          <div className="flex space-x-4 mb-8 overflow-x-auto scrollbar-hide">
+          <div className="flex space-x-4 mb-8 overflow-x-auto py-6 scrollbar-hide">
             {[1, 2, 3, 4, 5, 6, 7].map((day) => {
               const dayData = daysData.find((d) => d.day === day);
               const isCompleted = dayData?.isCompleted || false;

@@ -18,6 +18,7 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchCategories = async () => {
     try {
@@ -48,8 +49,9 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
   const handleSubmit = async () => {
     if (!categoryName.trim()) return;
 
-    if (modalType === "create") {
-      try {
+    setSubmitting(true);
+    try {
+      if (modalType === "create") {
         const response = await fetchWrapper("/admin/workout-category/save", {
           method: "POST",
           body: { name: categoryName.trim() },
@@ -59,13 +61,8 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
         } else {
           toast.error("Error creating category");
         }
-      } catch (error) {
-        console.error("Error creating category:", error);
-        toast.error("Error creating category");
-      }
-      fetchCategories();
-    } else if (modalType === "edit" && editingCategory) {
-      try {
+        fetchCategories();
+      } else if (modalType === "edit" && editingCategory) {
         const response = await fetchWrapper(
           `/admin/workout-category/update/${editingCategory._id}`,
           {
@@ -79,15 +76,16 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
         } else {
           toast.error("Error updating category");
         }
-      } catch (error) {
-        console.error("Error updating category:", error);
-        toast.error("Error updating category");
       }
+    } catch (error) {
+      console.error("Error saving category:", error);
+      toast.error("Error saving category");
+    } finally {
+      setSubmitting(false);
+      setShowModal(false);
+      setCategoryName("");
+      setEditingCategory(null);
     }
-
-    setShowModal(false);
-    setCategoryName("");
-    setEditingCategory(null);
   };
 
   const handleCloseModal = () => {
@@ -189,10 +187,10 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={!categoryName.trim()}
+                disabled={!categoryName.trim() || submitting}
                 className="flex-1 bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {modalType === "create" ? "Create" : "Update"}
+                {submitting ? (modalType === "create" ? "Creating..." : "Updating...") : (modalType === "create" ? "Create" : "Update")}
               </button>
             </div>
           </div>

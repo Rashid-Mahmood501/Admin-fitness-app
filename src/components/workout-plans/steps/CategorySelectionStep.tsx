@@ -12,6 +12,7 @@ export function CategorySelectionStep({
   onCategorySelection,
   onExerciseSelection,
   onCreatePlan,
+  creatingPlan = false,
 }: CategorySelectionStepProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,10 +132,10 @@ export function CategorySelectionStep({
       <div className="flex justify-center">
         <button
           onClick={onCreatePlan}
-          disabled={isCreateButtonDisabled()}
+          disabled={isCreateButtonDisabled() || creatingPlan}
           className="px-8 py-1.5 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Create
+          {creatingPlan ? "Creating..." : "Create"}
         </button>
       </div>
     </>

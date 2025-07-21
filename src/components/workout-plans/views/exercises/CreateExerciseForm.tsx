@@ -200,9 +200,10 @@ export function CreateExerciseForm({
           </button>
           <button
             onClick={handleFormSubmit}
-            className="w-[320px] px-6 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors"
+            disabled={loading}
+            className="w-[320px] px-6 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Loading..." : isEditMode ? "Update" : "Create"}
+            {loading ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update" : "Create")}
           </button>
         </div>
       </div>
