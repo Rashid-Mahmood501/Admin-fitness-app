@@ -1,13 +1,25 @@
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
+import { Category } from "../../types";
+
 interface CategorySelectorProps {
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
 }
 
-export function CategorySelector({ selectedCategory, onCategorySelect }: CategorySelectorProps) {
-  const categories = [
-    { id: "chest", name: "Chest" },
-    { id: "arm", name: "Arm" }
-  ];
+export function CategorySelector({
+  selectedCategory,
+  onCategorySelect,
+}: CategorySelectorProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const fetchCategories = async () => {
+    const response = await fetchWrapper("/admin/workout-category/all");
+    setCategories(response.data);
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   return (
     <div className="mb-6">
@@ -17,10 +29,10 @@ export function CategorySelector({ selectedCategory, onCategorySelect }: Categor
       <div className="flex space-x-4">
         {categories.map((category) => (
           <button
-            key={category.id}
-            onClick={() => onCategorySelect(category.id)}
+            key={category._id}
+            onClick={() => onCategorySelect(category.name)}
             className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              selectedCategory === category.id
+              selectedCategory === category.name
                 ? "bg-[#EC1D13] text-white"
                 : "bg-white text-black border border-black hover:bg-gray-50"
             }`}
@@ -31,4 +43,4 @@ export function CategorySelector({ selectedCategory, onCategorySelect }: Categor
       </div>
     </div>
   );
-} 
+}

@@ -11,7 +11,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
       <div className="flex items-center space-x-6">
         <div className="flex-shrink-0">
           <Image
-            src={booking.profileImage}
+            src={booking.profileImage ? booking.profileImage : "/placeholder.png"}
             alt={booking.name}
             className="w-20 h-20 rounded-lg object-cover"
             width={100}

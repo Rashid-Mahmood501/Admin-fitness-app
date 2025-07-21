@@ -15,7 +15,7 @@ export function ExerciseCard({ exercise, onEdit }: ExerciseCardProps) {
             <div className="h-48 bg-gray-200 relative">
               <div className="absolute inset-0 flex items-center justify-center text-gray-500">
                 <Image
-                  src={exercise.image}
+                  src={"/exercise_image.png"}
                   alt="Exercise Image"
                   width={320}
                   height={200}

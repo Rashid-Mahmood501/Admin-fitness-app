@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { WorkoutPlanHeader } from "../../WorkoutPlanHeader";
 import { Exercise, ExerciseForm } from "../../types";
 import { CreateExerciseForm } from "./CreateExerciseForm";
@@ -10,42 +12,9 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
   const [showCreateExerciseForm, setShowCreateExerciseForm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingExerciseId, setEditingExerciseId] = useState<string>("");
-  const [filterCategory, setFilterCategory] = useState<string>("chest");
-
-  const exercises: Exercise[] = [
-    {
-      id: "1",
-      name: "Incline Chest Press",
-      category: "chest",
-      reps: "10/10/10",
-      setType: "Normal Set",
-      image: "/exercise_image.png"
-    },
-    {
-      id: "2", 
-      name: "Dumbbell Flyes",
-      category: "chest",
-      reps: "12/12/12",
-      setType: "Normal Set",
-      image: "/exercise_image.png"
-    },
-    {
-      id: "3",
-      name: "Bicep Curls",
-      category: "arm",
-      reps: "15/15/15",
-      setType: "Normal Set",
-      image: "/exercise_image.png"
-    },
-    {
-      id: "4",
-      name: "Tricep Dips",
-      category: "arm", 
-      reps: "8/8/8",
-      setType: "Normal Set",
-      image: "/exercise_image.png"
-    }
-  ];
+  const [filterCategory, setFilterCategory] = useState<string>("Chest");
+  const [loading, setLoading] = useState(false);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
   const handleCreateExercise = () => {
     setShowCreateExerciseForm(true);
@@ -54,12 +23,16 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
   };
 
   const handleEditExercise = (exerciseId: string) => {
-    const exercise = exercises.find(ex => ex.id === exerciseId);
+    const exercise = exercises.find((ex) => ex._id === exerciseId);
     if (exercise) {
       setIsEditMode(true);
       setEditingExerciseId(exerciseId);
       setShowCreateExerciseForm(true);
     }
+  };
+  const fetchExercises = async () => {
+    const response = await fetchWrapper("/admin/workout/all");
+    setExercises(response.workouts);
   };
 
   const handleBackToExercises = () => {
@@ -68,25 +41,102 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
     setEditingExerciseId("");
   };
 
-  const handleFormSubmit = (formData: ExerciseForm & { selectedCategory: string }) => {
+  useEffect(() => {
+    fetchExercises();
+  }, []);
+
+  const handleFormSubmit = async (
+    formData: ExerciseForm & { selectedCategory: string }
+  ) => {
     if (isEditMode) {
-      console.log("Updating exercise:", {
-        id: editingExerciseId,
-        ...formData
-      });
+      if (!editingExerciseId) return;
+      setLoading(true);
+      const formDataToSave = new FormData();
+      formDataToSave.append("name", formData.workoutName);
+      formDataToSave.append("muscleGroup", formData.muscleGroup);
+      formDataToSave.append("setType", formData.setType);
+      formDataToSave.append("reps", formData.reps);
+      formDataToSave.append("comments", formData.additionalComments);
+      formDataToSave.append("suggestion", formData.workoutSuggestion);
+      if (formData.video) {
+        formDataToSave.append("video", formData.video as File);
+      }
+
+      try {
+        const response = await fetchWrapper(
+          `/admin/workout/update/${editingExerciseId}`,
+          {
+            method: "PUT",
+            body: formDataToSave,
+            isFormData: true,
+          }
+        );
+
+        if (
+          response.success ||
+          response.message === "Meal plan saved successfully"
+        ) {
+          toast.success("Meal Plan Saved");
+          fetchExercises();
+        } else {
+          toast.error("Failed to save meal plan");
+        }
+      } catch (error) {
+        console.error("Error submitting meal plan:", error);
+        toast.error("Error submitting meal plan");
+      } finally {
+        setLoading(false);
+        handleBackToExercises();
+      }
     } else {
-      console.log("Creating exercise:", formData);
+      setLoading(true);
+      const formDataToSave = new FormData();
+      formDataToSave.append("name", formData.workoutName);
+      formDataToSave.append("muscleGroup", formData.muscleGroup);
+      formDataToSave.append("setType", formData.setType);
+      formDataToSave.append("reps", formData.reps);
+      formDataToSave.append("comments", formData.additionalComments);
+      formDataToSave.append("suggestion", formData.workoutSuggestion);
+      formDataToSave.append("video", formData.video as File);
+
+      try {
+        const response = await fetchWrapper("/admin/workout/save", {
+          method: "POST",
+          body: formDataToSave,
+          isFormData: true,
+        });
+
+        if (
+          response.success ||
+          response.message === "Meal plan saved successfully"
+        ) {
+          toast.success("Meal Plan Saved");
+          fetchExercises();
+        } else {
+          toast.error("Failed to save meal plan");
+        }
+      } catch (error) {
+        console.error("Error submitting meal plan:", error);
+        toast.error("Error submitting meal plan");
+      } finally {
+        setLoading(false);
+        handleBackToExercises();
+      }
     }
-    handleBackToExercises();
   };
 
   if (showCreateExerciseForm) {
     return (
       <CreateExerciseForm
         isEditMode={isEditMode}
-        editingExercise={isEditMode ? exercises.find(ex => ex.id === editingExerciseId) : undefined}
+        editingExercise={
+          isEditMode
+            ? exercises.find((ex) => ex._id === editingExerciseId)
+            : undefined
+        }
         onSubmit={handleFormSubmit}
         onBack={handleBackToExercises}
+        loading={loading}
       />
     );
   }
@@ -101,6 +151,7 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
         onCreateExercise={handleCreateExercise}
         onEditExercise={handleEditExercise}
       />
+      <Toaster />
     </div>
   );
-} 
+}

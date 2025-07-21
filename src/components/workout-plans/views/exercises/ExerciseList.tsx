@@ -1,6 +1,6 @@
 import { Exercise } from "../../types";
-import { ExerciseCard } from "./ExerciseCard";
 import { CategoryFilter } from "./CategoryFilter";
+import { ExerciseCard } from "./ExerciseCard";
 
 interface ExerciseListProps {
   exercises: Exercise[];
@@ -17,8 +17,8 @@ export function ExerciseList({
   onCreateExercise,
   onEditExercise,
 }: ExerciseListProps) {
-  const filteredExercises = exercises.filter(exercise => 
-    exercise.category === filterCategory
+  const filteredExercises = exercises.filter(
+    (exercise) => exercise.muscleGroup === filterCategory
   );
 
   return (
@@ -45,17 +45,19 @@ export function ExerciseList({
         {filteredExercises.length > 0 ? (
           filteredExercises.map((exercise) => (
             <ExerciseCard
-              key={exercise.id}
+              key={exercise._id}
               exercise={exercise}
-              onEdit={() => onEditExercise(exercise.id)}
+              onEdit={() => onEditExercise(exercise._id)}
             />
           ))
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-500">No exercises found for {filterCategory} category</p>
+            <p className="text-gray-500">
+              No exercises found for {filterCategory} category
+            </p>
           </div>
         )}
       </div>
     </div>
   );
-} 
+}
