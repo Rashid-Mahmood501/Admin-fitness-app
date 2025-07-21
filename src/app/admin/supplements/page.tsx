@@ -4,6 +4,7 @@ import { fetchWrapper } from "@/utils/fetchwraper";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
+import Loader from "@/components/Loader";
 
 interface Supplement {
   _id?: string;
@@ -131,7 +132,7 @@ export default function SupplementsPage() {
 
         {fetchingSupplements ? (
           <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#EC1D13]"></div>
+            <Loader />
           </div>
         ) : supplements.length === 0 ? (
           <div className="text-center py-8 text-gray-500">

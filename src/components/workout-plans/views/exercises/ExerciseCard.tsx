@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Exercise } from "../../types";
 
 interface ExerciseCardProps {
@@ -9,16 +8,17 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onEdit }: ExerciseCardProps) {
   return (
     <div className="border border-black rounded-lg p-4">
-      <div className="flex gap-6 items-center">
+      <div className="flex gap-6 items-center flex-col sm:flex-row">
         <div>
           <div className="relative bg-white border border-black rounded-lg overflow-hidden w-[320px]">
             <div className="h-48 bg-gray-200 relative">
               <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                <Image
-                  src={"/exercise_image.png"}
+                <img
+                  src="/exercise_image.png"
                   alt="Exercise Image"
                   width={320}
                   height={200}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="absolute top-4 right-4">

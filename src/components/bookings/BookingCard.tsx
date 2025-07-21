@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { Booking } from './types';
 
 interface BookingCardProps {
@@ -10,9 +9,9 @@ export default function BookingCard({ booking }: BookingCardProps) {
     <div className="bg-white rounded-lg shadow-md py-4 pr-6 pl-4 border border-gray-100 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center space-x-6">
         <div className="flex-shrink-0">
-          <Image
+          <img
             src={booking.profileImage ? booking.profileImage : "/placeholder.png"}
-            alt={booking.name}
+            alt="profile image"
             className="w-20 h-20 rounded-lg object-cover"
             width={100}
             height={100}

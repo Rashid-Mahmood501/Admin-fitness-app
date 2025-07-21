@@ -31,6 +31,16 @@ const Sidebar = () => {
     }
   ];
 
+  // Helper function to check if a route is active
+  const isRouteActive = (href: string) => {
+    // Remove trailing slashes for comparison
+    const cleanPathname = pathname?.replace(/\/$/, '') || '';
+    const cleanHref = href.replace(/\/$/, '');
+    
+    // Check for exact match or if pathname starts with the href (for nested routes)
+    return cleanPathname === cleanHref || cleanPathname.startsWith(cleanHref + '/');
+  };
+
   return (
     <>
       <button
@@ -54,7 +64,7 @@ const Sidebar = () => {
           
           <nav className="space-y-2 flex-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = isRouteActive(item.href);
               return (
                 <Link
                   key={item.href}

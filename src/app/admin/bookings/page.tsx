@@ -2,6 +2,7 @@
 
 import BookingCard from "@/components/bookings/BookingCard";
 import { Booking } from "@/components/bookings/types";
+import Loader from "@/components/Loader";
 import { fetchWrapper } from "@/utils/fetchwraper";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
 export default function BookingsPage() {
   const [value, setValue] = useState<Value>(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const handleDateChange = (newValue: Value) => {
     setValue(newValue);
@@ -24,17 +26,24 @@ export default function BookingsPage() {
   };
 
   const fetchBookings = async () => {
-    const response = await fetchWrapper("/admin/meeting/all");
-    setBookings(
-      response.data.map((item: any) => ({
-        id: item._id,
-        name: item.userId?.fullname || "Unknown",
-        time: item.time,
-        type: item.location === "Zoom" ? "video" : "in-person",
-        profileImage: item.userId?.profileImage || "/placeholder.png",
-        _rawDate: item.date,
-      }))
-    );
+    try {
+      setLoading(true);
+      const response = await fetchWrapper("/admin/meeting/all");
+      setBookings(
+        response.data.map((item: any) => ({
+          id: item._id,
+          name: item.userId?.fullname || "Unknown",
+          time: item.time,
+          type: item.location === "Zoom" ? "video" : "in-person",
+          profileImage: item.userId?.profileImage || "/placeholder.png",
+          _rawDate: item.date,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filterBookings = bookings.filter((booking: Booking) => {
@@ -124,13 +133,18 @@ export default function BookingsPage() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filterBookings.map((booking: Booking) => (
-              <BookingCard key={booking.id} booking={booking} />
-            ))}
-            {filterBookings.length === 0 && (
+            {loading ? (
+              <div className="flex justify-center items-center py-4 col-span-full">
+                <Loader />
+              </div>
+            ) : filterBookings.length === 0 ? (
               <div className="col-span-full text-center text-gray-500">
                 No bookings found for this date
               </div>
+            ) : (
+              filterBookings.map((booking: Booking) => (
+                <BookingCard key={booking.id} booking={booking} />
+              ))
             )}
           </div>
         </div>

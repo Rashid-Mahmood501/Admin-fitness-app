@@ -141,7 +141,6 @@ export default function MealPlansPage() {
   const handleSave = async () => {
     setIsLoading(true);
 
-    // Add the current form's meal option if filled
     const formDataToSave = watch();
     let updatedDaysData = daysData;
     if (formDataToSave.foodName && formDataToSave.mealType) {
@@ -161,7 +160,6 @@ export default function MealPlansPage() {
       );
     }
 
-    // Only send days that have at least one meal option
     const dataToSave = updatedDaysData.filter(
       (day) => day.mealOptions.length > 0
     );
@@ -267,7 +265,7 @@ export default function MealPlansPage() {
             {getPlanTitle(selectedPlan)}
           </h2>
 
-          <div className="flex space-x-4 mb-8">
+          <div className="flex space-x-4 mb-8 overflow-x-auto scrollbar-hide">
             {[1, 2, 3, 4, 5, 6, 7].map((day) => {
               const dayData = daysData.find((d) => d.day === day);
               const isCompleted = dayData?.isCompleted || false;

@@ -7,6 +7,7 @@ import { WorkoutPlanHeader } from "../../WorkoutPlanHeader";
 import { Exercise, ExerciseForm } from "../../types";
 import { CreateExerciseForm } from "./CreateExerciseForm";
 import { ExerciseList } from "./ExerciseList";
+import Loader from "@/components/Loader";
 
 export function ExercisesView({ onBack }: { onBack: () => void }) {
   const [showCreateExerciseForm, setShowCreateExerciseForm] = useState(false);
@@ -15,6 +16,7 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
   const [filterCategory, setFilterCategory] = useState<string>("Chest");
   const [loading, setLoading] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const handleCreateExercise = () => {
     setShowCreateExerciseForm(true);
@@ -30,9 +32,17 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
       setShowCreateExerciseForm(true);
     }
   };
+  
   const fetchExercises = async () => {
-    const response = await fetchWrapper("/admin/workout/all");
-    setExercises(response.workouts);
+    try {
+      setInitialLoading(true);
+      const response = await fetchWrapper("/admin/workout/all");
+      setExercises(response.workouts);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+    } finally {
+      setInitialLoading(false);
+    }
   };
 
   const handleBackToExercises = () => {
@@ -144,13 +154,19 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-6">
       <WorkoutPlanHeader onBack={onBack} />
-      <ExerciseList
-        exercises={exercises}
-        filterCategory={filterCategory}
-        onFilterChange={setFilterCategory}
-        onCreateExercise={handleCreateExercise}
-        onEditExercise={handleEditExercise}
-      />
+      {initialLoading ? (
+        <div className="flex justify-center items-center">
+          <Loader />
+        </div>
+      ) : (
+        <ExerciseList
+          exercises={exercises}
+          filterCategory={filterCategory}
+          onFilterChange={setFilterCategory}
+          onCreateExercise={handleCreateExercise}
+          onEditExercise={handleEditExercise}
+        />
+      )}
       <Toaster />
     </div>
   );

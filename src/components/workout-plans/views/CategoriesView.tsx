@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { Category } from "../types";
 import { WorkoutPlanHeader } from "../WorkoutPlanHeader";
+import Loader from "@/components/Loader";
 
 interface CategoriesViewProps {
   onBack: () => void;
@@ -16,10 +17,18 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
   const [modalType, setModalType] = useState<"edit" | "create">("create");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const fetchCategories = async () => {
-    const response = await fetchWrapper("/admin/workout-category/all");
-    setCategories(response.data);
+    try {
+      setLoading(true);
+      const response = await fetchWrapper("/admin/workout-category/all");
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditCategory = (category: Category) => {
@@ -98,36 +107,40 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
         <h2 className="text-2xl font-bold text-[#171616] mb-6">Categories</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category) => (
-            <div
-              key={category._id}
-              className="bg-white rounded-lg border border-black p-6 relative"
-            >
-              <button
-                onClick={() => handleEditCategory(category)}
-                className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded transition-colors"
+        {loading ? (
+          <Loader />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {categories.map((category) => (
+              <div
+                key={category._id}
+                className="bg-white rounded-lg border border-black p-6 relative"
               >
-                <svg
-                  className="w-4 h-4 text-black"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <button
+                  onClick={() => handleEditCategory(category)}
+                  className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded transition-colors"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              </button>
-              <h3 className="text-base font-medium text-[#171616] text-center">
-                {category.name}
-              </h3>
-            </div>
-          ))}
-        </div>
+                  <svg
+                    className="w-4 h-4 text-black"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </button>
+                <h3 className="text-base font-medium text-[#171616] text-center">
+                  {category.name}
+                </h3>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="mt-8">
           <div

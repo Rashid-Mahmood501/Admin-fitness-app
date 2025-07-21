@@ -12,7 +12,7 @@ export function DaySelectionStep({ selectedDays, onDaySelection, onContinue }: D
         Select the days split you want to create for
       </p>
 
-      <div className="flex space-x-4 mb-8">
+      <div className="flex space-x-4 mb-8 overflow-x-auto scrollbar-hide">
         {availableDays.map((day) => (
           <button
             key={day}
