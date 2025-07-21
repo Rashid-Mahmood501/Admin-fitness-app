@@ -1,20 +1,29 @@
 "use client";
+import { fetchWrapper } from "@/utils/fetchwraper";
 import { useState } from "react";
+import { toast, Toaster } from "react-hot-toast";
+import { CategorySelectionStep } from "./steps/CategorySelectionStep";
 import { DaySelectionStep } from "./steps/DaySelectionStep";
+import { ExerciseSelectionStep } from "./steps/ExerciseSelectionStep";
+import { WorkoutPlanTypes } from "./types";
 import { CategoriesView } from "./views/CategoriesView";
 import { ExercisesView } from "./views/exercises/ExercisesView";
-import { WorkoutPlanTypes } from "./types";
 import { WorkoutPlanHeader } from "./WorkoutPlanHeader";
-import { CategorySelectionStep } from "./steps/CategorySelectionStep";
-import { ExerciseSelectionStep } from "./steps/ExerciseSelectionStep";
 
 export default function WorkoutPlansPage() {
-  const [currentStep, setCurrentStep] = useState<"days" | "categories" | "exercises">("days");
+  const [currentStep, setCurrentStep] = useState<
+    "days" | "categories" | "exercises"
+  >("days");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [dayCategories, setDayCategories] = useState<{ [key: number]: string }>({});
-  const [dayExercises, setDayExercises] = useState<{ [key: number]: string[] }>({});
+  const [dayCategories, setDayCategories] = useState<{ [key: number]: string }>(
+    {}
+  );
+  const [dayExercises, setDayExercises] = useState<{ [key: number]: string[] }>(
+    {}
+  );
   const [showMultiStepFlow, setShowMultiStepFlow] = useState(false);
   const [currentDay, setCurrentDay] = useState<number>(1);
+  const [workoutPlanId, setWorkoutPlanId] = useState<string>("");
 
   const [selectedView, setSelectedView] = useState<string | null>(null);
 
@@ -48,6 +57,7 @@ export default function WorkoutPlansPage() {
       setSelectedView("exercises");
     } else if (["muscle-mass", "weight-loss", "bulk-up"].includes(planId)) {
       setCurrentStep("days");
+      setWorkoutPlanId(planId);
       setShowMultiStepFlow(true);
     } else {
       console.log(`Selected workout plan: ${planId}`);
@@ -84,20 +94,28 @@ export default function WorkoutPlansPage() {
 
   const handleConfirmExercisesForDay = () => {
     setCurrentStep("categories");
-    
+
     const nextDay = currentDay + 1;
     if (nextDay <= selectedDays[0]) {
       setCurrentDay(nextDay);
     }
   };
 
-  const handleCreateWorkoutPlan = () => {
-    console.log("Creating workout plan with all data:", {
-      selectedDays: selectedDays[0],
-      dayCategories,
-      dayExercises,
-    });
-    
+  const handleCreateWorkoutPlan = async () => {
+    try {
+      const response = await fetchWrapper("/admin/workout-plan/save", {
+        method: "POST",
+        body: { workoutPlanId, selectedDays, dayCategories, dayExercises },
+      });
+      if (response.success) {
+        toast.success("Workout plan created successfully");
+      } else {
+        toast.error("Failed to create workout plan");
+      }
+    } catch (error) {
+      console.error("Error creating workout plan:", error);
+    }
+
     setShowMultiStepFlow(false);
     setCurrentStep("days");
     setSelectedDays([]);
@@ -117,7 +135,7 @@ export default function WorkoutPlansPage() {
     return (
       <div className="space-y-6">
         <WorkoutPlanHeader onBack={handleBackToMain} />
-        
+
         <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
           {currentStep === "days" && (
             <DaySelectionStep
@@ -151,6 +169,7 @@ export default function WorkoutPlansPage() {
             />
           )}
         </div>
+        <Toaster />
       </div>
     );
   }
@@ -205,4 +224,4 @@ export default function WorkoutPlansPage() {
       </div>
     </div>
   );
-} 
+}

@@ -4,17 +4,20 @@ export interface WorkoutPlanTypes {
 }
 
 export interface Category {
-  id: string;
+  _id: string;
   name: string;
 }
 
 export interface Exercise {
-  id: string;
+  _id: string;
   name: string;
   category: string;
   reps: string;
   setType: string;
   image: string;
+  muscleGroup?: string;
+  comments?: string;
+  suggestion?: string;
 }
 
 export interface ExerciseForm {
@@ -55,4 +58,4 @@ export interface ExerciseSelectionStepProps {
 
 export interface WorkoutPlanHeaderProps {
   onBack: () => void;
-} 
+}

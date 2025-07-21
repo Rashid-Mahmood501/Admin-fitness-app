@@ -4,4 +4,5 @@ export interface Booking {
   time: string;
   type: 'in-person' | 'video';
   profileImage: string;
+  _rawDate: string;
 } 

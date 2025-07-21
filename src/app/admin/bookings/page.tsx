@@ -1,63 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import Calendar from "react-calendar";
-import { format } from "date-fns";
-import "react-calendar/dist/Calendar.css";
-import "./calendar.css";
 import BookingCard from "@/components/bookings/BookingCard";
 import { Booking } from "@/components/bookings/types";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import "./calendar.css";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
-const dummyBookings: Booking[] = [
-  {
-    id: "1",
-    name: "William Jones",
-    time: "09:30 AM",
-    type: "in-person",
-    profileImage: "/placeholder.png",
-  },
-  {
-    id: "2",
-    name: "William Jones",
-    time: "10:30 AM",
-    type: "video",
-    profileImage: "/placeholder.png",
-  },
-  {
-    id: "3",
-    name: "William Jones",
-    time: "11:30 AM",
-    type: "video",
-    profileImage: "/placeholder.png",
-  },
-  {
-    id: "4",
-    name: "William Jones",
-    time: "01:30 PM",
-    type: "in-person",
-    profileImage: "/placeholder.png",
-  },
-  {
-    id: "5",
-    name: "William Jones",
-    time: "02:00 PM",
-    type: "in-person",
-    profileImage: "/placeholder.png",
-  },
-  {
-    id: "6",
-    name: "William Jones",
-    time: "03:30 PM",
-    type: "in-person",
-    profileImage: "/placeholder.png",
-  },
-];
-
 export default function BookingsPage() {
   const [value, setValue] = useState<Value>(new Date());
+  const [bookings, setBookings] = useState<Booking[]>([]);
 
   const handleDateChange = (newValue: Value) => {
     setValue(newValue);
@@ -65,6 +22,41 @@ export default function BookingsPage() {
       console.log("Selected date:", format(newValue, "yyyy-MM-dd"));
     }
   };
+
+  const fetchBookings = async () => {
+    const response = await fetchWrapper("/admin/meeting/all");
+    setBookings(
+      response.data.map((item: any) => ({
+        id: item._id,
+        name: item.userId?.fullname || "Unknown",
+        time: item.time,
+        type: item.location === "Zoom" ? "video" : "in-person",
+        profileImage: item.userId?.profileImage || "/placeholder.png",
+        _rawDate: item.date,
+      }))
+    );
+  };
+
+  const filterBookings = bookings.filter((booking: Booking) => {
+    const bookingDate = new Date(booking._rawDate);
+    return (
+      bookingDate.toISOString().slice(0, 10) ===
+      (value instanceof Date
+        ? value.toISOString().slice(0, 10)
+        : (value as [ValuePiece, ValuePiece])[0]?.toISOString().slice(0, 10))
+    );
+  });
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const meetingDates = new Set(
+    (bookings || [])
+      .map((b: any) => b._rawDate)
+      .filter(Boolean)
+      .map((date: string) => new Date(date).toISOString().slice(0, 10))
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -103,6 +95,27 @@ export default function BookingsPage() {
               const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
               return days[date.getDay()];
             }}
+            tileContent={({ date, view }) => {
+              if (view === "month") {
+                const dateString = date.toISOString().slice(0, 10);
+                if (meetingDates.has(dateString)) {
+                  return (
+                    <span
+                      style={{
+                        display: "block",
+                        margin: "0 auto",
+                        marginTop: 2,
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "#EC1D13",
+                      }}
+                    />
+                  );
+                }
+              }
+              return null;
+            }}
           />
         </div>
         <div>
@@ -111,9 +124,14 @@ export default function BookingsPage() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dummyBookings.map((booking) => (
+            {filterBookings.map((booking: Booking) => (
               <BookingCard key={booking.id} booking={booking} />
             ))}
+            {filterBookings.length === 0 && (
+              <div className="col-span-full text-center text-gray-500">
+                No bookings found for this date
+              </div>
+            )}
           </div>
         </div>
       </div>

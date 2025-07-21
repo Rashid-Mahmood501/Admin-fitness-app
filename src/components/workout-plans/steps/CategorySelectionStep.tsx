@@ -1,4 +1,6 @@
-import { CategorySelectionStepProps } from "../types";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
+import { Category, CategorySelectionStepProps } from "../types";
 
 export function CategorySelectionStep({
   selectedDays,
@@ -10,7 +12,12 @@ export function CategorySelectionStep({
   onExerciseSelection,
   onCreatePlan,
 }: CategorySelectionStepProps) {
-  const categories = ["Chest", "Arm", "Abs"];
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const fetchCategories = async () => {
+    const response = await fetchWrapper("/admin/workout-category/all");
+    setCategories(response.data);
+  };
 
   const getDayButtonClass = (day: number) => {
     if (currentDay === day) {
@@ -31,6 +38,10 @@ export function CategorySelectionStep({
     );
   };
 
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   return (
     <>
       <h2 className="text-2xl font-bold text-[#171616] mb-6">
@@ -38,15 +49,19 @@ export function CategorySelectionStep({
       </h2>
 
       <div className="flex space-x-4 mb-8">
-        {Array.from({ length: selectedDays[0] }, (_, index) => index + 1).map((day) => (
-          <button
-            key={day}
-            onClick={() => onDayChange(day)}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${getDayButtonClass(day)}`}
-          >
-            Day {day}
-          </button>
-        ))}
+        {Array.from({ length: selectedDays[0] }, (_, index) => index + 1).map(
+          (day) => (
+            <button
+              key={day}
+              onClick={() => onDayChange(day)}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${getDayButtonClass(
+                day
+              )}`}
+            >
+              Day {day}
+            </button>
+          )
+        )}
       </div>
 
       <div className="mb-8">
@@ -60,15 +75,15 @@ export function CategorySelectionStep({
         <div className="flex space-x-4 mb-6">
           {categories.map((category) => (
             <button
-              key={category}
-              onClick={() => onCategorySelection(currentDay, category)}
+              key={category._id}
+              onClick={() => onCategorySelection(currentDay, category.name)}
               className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                dayCategories[currentDay] === category
+                dayCategories[currentDay] === category.name
                   ? "bg-[#EC1D13] text-white"
                   : "bg-white text-black border border-black hover:bg-gray-50"
               }`}
             >
-              {category}
+              {category.name}
             </button>
           ))}
         </div>
@@ -101,4 +116,4 @@ export function CategorySelectionStep({
       </div>
     </>
   );
-} 
+}

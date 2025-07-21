@@ -1,6 +1,8 @@
 "use client";
+import { fetchWrapper } from "@/utils/fetchwraper";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import toast, { Toaster } from "react-hot-toast";
 
 interface MealOption {
   id: string;
@@ -10,7 +12,7 @@ interface MealOption {
   protein: number;
   fat: number;
   carbs: number;
-  image: FileList | null;
+  image: string; // Now stores the image URL
   preparation: string;
 }
 
@@ -22,6 +24,7 @@ interface DayData {
 
 export default function MealPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState(1);
   const [daysData, setDaysData] = useState<DayData[]>(
     Array.from({ length: 7 }, (_, i) => ({
@@ -30,7 +33,39 @@ export default function MealPlansPage() {
       isCompleted: false,
     }))
   );
-  const { register, handleSubmit, reset, watch } = useForm<MealOption>();
+  const { register, handleSubmit, reset, watch, setValue } =
+    useForm<MealOption>();
+
+  // Image upload handler
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+    toast.loading("Uploading image...", {
+      id: "uploading-image",
+    });
+
+    try {
+      const response = await fetchWrapper("/admin/meal/upload-image", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      if (response.imageUrl) {
+        setValue("image", response.imageUrl);
+        toast.dismiss("uploading-image");
+        toast.success("Image uploaded!");
+      } else {
+        toast.error("Image upload failed");
+      }
+    } catch {
+      toast.error("Image upload error");
+    }
+  };
 
   const mealPlanTypes = [
     {
@@ -68,6 +103,7 @@ export default function MealPlansPage() {
     const newMealOption: MealOption = {
       ...data,
       id: Date.now().toString(),
+      image: data.image,
     };
 
     setDaysData((prev) =>
@@ -102,15 +138,19 @@ export default function MealPlansPage() {
     return currentDayData.mealOptions.length >= 2;
   };
 
-  const handleSave = () => {
-    const formData = watch();
-    if (formData.foodName && formData.mealType) {
-      const newMealOption: MealOption = {
-        ...formData,
-        id: Date.now().toString(),
-      };
+  const handleSave = async () => {
+    setIsLoading(true);
 
-      const updatedDaysData = daysData.map((day) =>
+    // Add the current form's meal option if filled
+    const formDataToSave = watch();
+    let updatedDaysData = daysData;
+    if (formDataToSave.foodName && formDataToSave.mealType) {
+      const newMealOption: MealOption = {
+        ...formDataToSave,
+        id: Date.now().toString(),
+        image: formDataToSave.image,
+      };
+      updatedDaysData = daysData.map((day) =>
         day.day === selectedDay
           ? {
               ...day,
@@ -119,11 +159,53 @@ export default function MealPlansPage() {
             }
           : day
       );
+    }
 
-      setDaysData(updatedDaysData);
-      reset();
+    // Only send days that have at least one meal option
+    const dataToSave = updatedDaysData.filter(
+      (day) => day.mealOptions.length > 0
+    );
 
-      console.log("Saving meal plan:", updatedDaysData);
+    if (dataToSave.length === 0) {
+      toast.error("Please add at least one meal option before saving.");
+      setIsLoading(false);
+      return;
+    }
+
+    const submit = {
+      planTitle: selectedPlan,
+      days: dataToSave,
+    };
+
+    try {
+      const response = await fetchWrapper("/admin/meal/save", {
+        method: "POST",
+        body: submit,
+        // isFormData: true,
+      });
+
+      if (
+        response.success ||
+        response.message === "Meal plan saved successfully"
+      ) {
+        toast.success("Meal Plan Saved");
+        reset();
+        setDaysData(
+          Array.from({ length: 7 }, (_, i) => ({
+            day: i + 1,
+            mealOptions: [],
+            isCompleted: false,
+          }))
+        );
+        setSelectedDay(1);
+      } else {
+        toast.error("Failed to save meal plan");
+      }
+    } catch (error) {
+      console.error("Error submitting meal plan:", error);
+      toast.error("Error submitting meal plan");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -355,7 +437,7 @@ export default function MealPlansPage() {
               <input
                 type="file"
                 accept="image/*"
-                {...register("image")}
+                onChange={handleImageUpload}
                 className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
                 required
               />
@@ -402,7 +484,7 @@ export default function MealPlansPage() {
                 onClick={handleSave}
                 className="w-[320px] bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg"
               >
-                Save
+                {isLoading ? "Saving..." : "Save"}
               </button>
               <button
                 onClick={handleNext}
@@ -413,6 +495,7 @@ export default function MealPlansPage() {
             </div>
           )}
         </div>
+        <Toaster />
       </div>
     );
   }
@@ -444,6 +527,7 @@ export default function MealPlansPage() {
           ))}
         </div>
       </div>
+      <Toaster />
     </div>
   );
 }

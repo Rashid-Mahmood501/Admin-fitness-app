@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Toaster } from "react-hot-toast";
 import { Exercise, ExerciseForm } from "../../types";
-import { FormField } from "./FormField";
 import { CategorySelector } from "./CategorySelector";
+import { FormField } from "./FormField";
 
 interface CreateExerciseFormProps {
   isEditMode: boolean;
   editingExercise?: Exercise;
   onSubmit: (formData: ExerciseForm & { selectedCategory: string }) => void;
   onBack: () => void;
+  loading: boolean;
 }
 
 export function CreateExerciseForm({
@@ -17,6 +19,7 @@ export function CreateExerciseForm({
   editingExercise,
   onSubmit,
   onBack,
+  loading,
 }: CreateExerciseFormProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [exerciseForm, setExerciseForm] = useState<ExerciseForm>({
@@ -31,37 +34,37 @@ export function CreateExerciseForm({
 
   useEffect(() => {
     if (isEditMode && editingExercise) {
-      setSelectedCategory(editingExercise.category);
+      setSelectedCategory(editingExercise.muscleGroup!);
       setExerciseForm({
         workoutName: editingExercise.name,
         setType: editingExercise.setType,
         video: null,
-        muscleGroup: editingExercise.category.charAt(0).toUpperCase() + editingExercise.category.slice(1),
+        muscleGroup: editingExercise.muscleGroup || "",
         reps: editingExercise.reps,
-        additionalComments: "",
-        workoutSuggestion: "",
+        additionalComments: editingExercise.comments || "",
+        workoutSuggestion: editingExercise.suggestion || "",
       });
     }
   }, [isEditMode, editingExercise]);
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
-    setExerciseForm(prev => ({
+    setExerciseForm((prev) => ({
       ...prev,
-      muscleGroup: category.charAt(0).toUpperCase() + category.slice(1)
+      muscleGroup: category.charAt(0).toUpperCase() + category.slice(1),
     }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setExerciseForm(prev => ({ ...prev, video: e.target.files![0] }));
+      setExerciseForm((prev) => ({ ...prev, video: e.target.files![0] }));
     }
   };
 
   const handleFormSubmit = () => {
     onSubmit({
       ...exerciseForm,
-      selectedCategory
+      selectedCategory,
     });
   };
 
@@ -85,7 +88,9 @@ export function CreateExerciseForm({
           {isEditMode ? "Edit Exercise" : "Create New Exercise"}
         </h2>
         <p className="text-gray-600 mb-6">
-          {isEditMode ? "Update the exercise details below" : "Select category in which you want to add exercise"}
+          {isEditMode
+            ? "Update the exercise details below"
+            : "Select category in which you want to add exercise"}
         </p>
 
         <CategorySelector
@@ -98,14 +103,18 @@ export function CreateExerciseForm({
             <FormField
               label="Workout Name"
               value={exerciseForm.workoutName}
-              onChange={(value) => setExerciseForm(prev => ({ ...prev, workoutName: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, workoutName: value }))
+              }
               placeholder="e.g., Dumbbell Incline Bench Press"
             />
 
             <FormField
               label="Set Type"
               value={exerciseForm.setType}
-              onChange={(value) => setExerciseForm(prev => ({ ...prev, setType: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, setType: value }))
+              }
               placeholder="e.g., Normal Set"
             />
 
@@ -129,14 +138,18 @@ export function CreateExerciseForm({
             <FormField
               label="Muscle Group"
               value={exerciseForm.muscleGroup}
-              onChange={(value) => setExerciseForm(prev => ({ ...prev, muscleGroup: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, muscleGroup: value }))
+              }
               placeholder="e.g., Chest"
             />
 
             <FormField
               label="Reps"
               value={exerciseForm.reps}
-              onChange={(value) => setExerciseForm(prev => ({ ...prev, reps: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, reps: value }))
+              }
               placeholder="e.g., 10/10/10"
             />
           </div>
@@ -148,7 +161,12 @@ export function CreateExerciseForm({
           </label>
           <textarea
             value={exerciseForm.additionalComments}
-            onChange={(e) => setExerciseForm(prev => ({ ...prev, additionalComments: e.target.value }))}
+            onChange={(e) =>
+              setExerciseForm((prev) => ({
+                ...prev,
+                additionalComments: e.target.value,
+              }))
+            }
             rows={4}
             className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors resize-vertical"
             placeholder="Add any additional comments or instructions..."
@@ -162,7 +180,12 @@ export function CreateExerciseForm({
           <input
             type="text"
             value={exerciseForm.workoutSuggestion}
-            onChange={(e) => setExerciseForm(prev => ({ ...prev, workoutSuggestion: e.target.value }))}
+            onChange={(e) =>
+              setExerciseForm((prev) => ({
+                ...prev,
+                workoutSuggestion: e.target.value,
+              }))
+            }
             className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
             placeholder="e.g., Cardio 40min"
           />
@@ -179,10 +202,11 @@ export function CreateExerciseForm({
             onClick={handleFormSubmit}
             className="w-[320px] px-6 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors"
           >
-            {isEditMode ? "Update" : "Create"}
+            {loading ? "Loading..." : isEditMode ? "Update" : "Create"}
           </button>
         </div>
       </div>
+      <Toaster />
     </div>
   );
-} 
+}

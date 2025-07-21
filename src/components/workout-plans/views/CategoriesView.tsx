@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { Category } from "../types";
 import { WorkoutPlanHeader } from "../WorkoutPlanHeader";
 
@@ -9,14 +11,16 @@ interface CategoriesViewProps {
 }
 
 export function CategoriesView({ onBack }: CategoriesViewProps) {
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "1", name: "Chest" },
-    { id: "2", name: "Arm" },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<"edit" | "create">("create");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState("");
+
+  const fetchCategories = async () => {
+    const response = await fetchWrapper("/admin/workout-category/all");
+    setCategories(response.data);
+  };
 
   const handleEditCategory = (category: Category) => {
     setModalType("edit");
@@ -32,23 +36,44 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
     setShowModal(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!categoryName.trim()) return;
 
     if (modalType === "create") {
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        name: categoryName.trim(),
-      };
-      setCategories([newCategory, ...categories]);
+      try {
+        const response = await fetchWrapper("/admin/workout-category/save", {
+          method: "POST",
+          body: { name: categoryName.trim() },
+        });
+        if (response.success) {
+          toast.success("Category created successfully");
+        } else {
+          toast.error("Error creating category");
+        }
+      } catch (error) {
+        console.error("Error creating category:", error);
+        toast.error("Error creating category");
+      }
+      fetchCategories();
     } else if (modalType === "edit" && editingCategory) {
-      setCategories(
-        categories.map((cat) =>
-          cat.id === editingCategory.id
-            ? { ...cat, name: categoryName.trim() }
-            : cat
-        )
-      );
+      try {
+        const response = await fetchWrapper(
+          `/admin/workout-category/update/${editingCategory._id}`,
+          {
+            method: "PUT",
+            body: { name: categoryName.trim() },
+          }
+        );
+        if (response.success) {
+          toast.success("Category updated successfully");
+          fetchCategories();
+        } else {
+          toast.error("Error updating category");
+        }
+      } catch (error) {
+        console.error("Error updating category:", error);
+        toast.error("Error updating category");
+      }
     }
 
     setShowModal(false);
@@ -62,6 +87,10 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
     setEditingCategory(null);
   };
 
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   return (
     <div className="space-y-6">
       <WorkoutPlanHeader onBack={onBack} />
@@ -72,7 +101,7 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {categories.map((category) => (
             <div
-              key={category.id}
+              key={category._id}
               className="bg-white rounded-lg border border-black p-6 relative"
             >
               <button
@@ -156,6 +185,7 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
           </div>
         </div>
       )}
+      <Toaster />
     </div>
   );
-} 
+}
