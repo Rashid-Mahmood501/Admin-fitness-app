@@ -2,28 +2,51 @@ import { Exercise } from "../../types";
 
 interface ExerciseCardProps {
   exercise: Exercise;
-  onEdit: () => void;
+  onEditExercise: (exerciseId: string) => void;
+  isAlternative?: boolean;
 }
 
-export function ExerciseCard({ exercise, onEdit }: ExerciseCardProps) {
+export function ExerciseCard({
+  exercise,
+  onEditExercise,
+  isAlternative = false,
+}: ExerciseCardProps) {
   return (
-    <div className="border border-black rounded-lg p-4">
-      <div className="flex gap-6 items-center flex-col sm:flex-row">
+    <div
+      className={`rounded-lg p-4 ${
+        isAlternative
+          ? "w-64 min-w-[16rem] max-w-[18rem] p-2"
+          : "border border-black"
+      }`}
+    >
+      <div
+        className={`flex gap-6 items-center ${
+          isAlternative ? "" : "flex-col sm:flex-row"
+        }`}
+      >
         <div>
-          <div className="relative bg-white border border-black rounded-lg overflow-hidden w-[320px]">
-            <div className="h-48 bg-gray-200 relative">
+          <div
+            className={`relative bg-white border border-black rounded-lg overflow-hidden ${
+              isAlternative ? "w-56" : "w-[320px]"
+            }`}
+          >
+            <div
+              className={`bg-gray-200 relative ${
+                isAlternative ? "h-38" : "h-48"
+              }`}
+            >
               <div className="absolute inset-0 flex items-center justify-center text-gray-500">
                 <img
                   src="/exercise_image.png"
                   alt="Exercise Image"
-                  width={320}
-                  height={200}
+                  width={isAlternative ? 224 : 320}
+                  height={isAlternative ? 128 : 200}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="absolute top-4 right-4">
                 <button
-                  onClick={onEdit}
+                  onClick={() => onEditExercise(exercise._id)}
                   className="w-8 h-8 bg-white border border-black rounded-full flex items-center justify-center hover:bg-gray-50"
                 >
                   <svg
@@ -42,24 +65,48 @@ export function ExerciseCard({ exercise, onEdit }: ExerciseCardProps) {
                 </button>
               </div>
               <div className="absolute bottom-4 left-4 text-white">
-                <h3 className="text-lg font-semibold">
+                <h3
+                  className={`font-semibold ${
+                    isAlternative ? "text-base" : "text-lg"
+                  }`}
+                >
                   {exercise.name}
                 </h3>
-                <p className="text-sm">Reps {exercise.reps}</p>
-                <span className="bg-[#EC1D13] text-white px-3 py-1 rounded text-sm">
+                <p className={`text-sm ${isAlternative ? "text-xs" : ""}`}>
+                  Reps {exercise.reps}
+                </p>
+                <span
+                  className={`bg-[#EC1D13] text-white px-3 py-1 rounded ${
+                    isAlternative ? "text-xs px-2 py-0.5" : "text-sm"
+                  }`}
+                >
                   {exercise.setType}
                 </span>
               </div>
             </div>
           </div>
         </div>
-        <div className="w-64">
-          <h3 className="font-bold text-[#171616] mb-1">
-            Equipment Options
-          </h3>
-          <p className="text-gray-500">Not found</p>
-        </div>
+        {!isAlternative && (
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-[#171616] mb-1">Equipment Options</h3>
+            {exercise.alternatives && exercise.alternatives.length > 0 ? (
+              <div className="flex flex-row flex-wrap gap-4 mt-2">
+                {exercise.alternatives.map((alt, idx) => (
+                  <div key={alt._id || idx}>
+                    <ExerciseCard
+                      exercise={alt}
+                      onEditExercise={onEditExercise}
+                      isAlternative={true}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">Not found</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+}

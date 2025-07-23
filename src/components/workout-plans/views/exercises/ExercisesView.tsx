@@ -1,5 +1,6 @@
 "use client";
 
+import Loader from "@/components/Loader";
 import { fetchWrapper } from "@/utils/fetchwraper";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
@@ -7,7 +8,6 @@ import { WorkoutPlanHeader } from "../../WorkoutPlanHeader";
 import { Exercise, ExerciseForm } from "../../types";
 import { CreateExerciseForm } from "./CreateExerciseForm";
 import { ExerciseList } from "./ExerciseList";
-import Loader from "@/components/Loader";
 
 export function ExercisesView({ onBack }: { onBack: () => void }) {
   const [showCreateExerciseForm, setShowCreateExerciseForm] = useState(false);
@@ -17,6 +17,9 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [editingExercise, setEditingExercise] = useState<Exercise | undefined>(
+    undefined
+  );
 
   const handleCreateExercise = () => {
     setShowCreateExerciseForm(true);
@@ -24,15 +27,31 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
     setEditingExerciseId("");
   };
 
+  // Helper to find exercise by id recursively (top-level and alternatives)
+  const findExerciseById = (
+    id: string,
+    exercises: Exercise[]
+  ): Exercise | undefined => {
+    for (const ex of exercises) {
+      if (ex._id === id) return ex;
+      if (ex.alternatives && ex.alternatives.length > 0) {
+        const found = findExerciseById(id, ex.alternatives);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+
   const handleEditExercise = (exerciseId: string) => {
-    const exercise = exercises.find((ex) => ex._id === exerciseId);
+    const exercise = findExerciseById(exerciseId, exercises);
     if (exercise) {
       setIsEditMode(true);
+      setEditingExercise(exercise);
       setEditingExerciseId(exerciseId);
       setShowCreateExerciseForm(true);
     }
   };
-  
+
   const fetchExercises = async () => {
     try {
       setInitialLoading(true);
@@ -69,7 +88,7 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
       formDataToSave.append("comments", formData.additionalComments);
       formDataToSave.append("suggestion", formData.workoutSuggestion);
       if (formData.video) {
-        formDataToSave.append("video", formData.video as File);
+        formDataToSave.append("video", formData.video as unknown as File);
       }
 
       try {
@@ -100,22 +119,11 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
       }
     } else {
       setLoading(true);
-      const formDataToSave = new FormData();
-      formDataToSave.append("name", formData.workoutName);
-      formDataToSave.append("muscleGroup", formData.muscleGroup);
-      formDataToSave.append("setType", formData.setType);
-      formDataToSave.append("reps", formData.reps);
-      formDataToSave.append("comments", formData.additionalComments);
-      formDataToSave.append("suggestion", formData.workoutSuggestion);
-      formDataToSave.append("video", formData.video as File);
-
       try {
         const response = await fetchWrapper("/admin/workout/save", {
           method: "POST",
-          body: formDataToSave,
-          isFormData: true,
+          body: formData,
         });
-
         if (
           response.success ||
           response.message === "Meal plan saved successfully"
@@ -139,11 +147,7 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
     return (
       <CreateExerciseForm
         isEditMode={isEditMode}
-        editingExercise={
-          isEditMode
-            ? exercises.find((ex) => ex._id === editingExerciseId)
-            : undefined
-        }
+        editingExercise={isEditMode ? editingExercise : undefined}
         onSubmit={handleFormSubmit}
         onBack={handleBackToExercises}
         loading={loading}

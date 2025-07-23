@@ -18,16 +18,22 @@ export interface Exercise {
   muscleGroup?: string;
   comments?: string;
   suggestion?: string;
+  alternatives?: Exercise[];
 }
 
 export interface ExerciseForm {
   workoutName: string;
   setType: string;
-  video: File | null;
+  video: string;
   muscleGroup: string;
   reps: string;
   additionalComments: string;
   workoutSuggestion: string;
+  alternativeCount?: number;
+  alternativeExercises?: {
+    category: string;
+    exercise: ExerciseForm;
+  }[];
 }
 
 export interface DaySelectionStepProps {

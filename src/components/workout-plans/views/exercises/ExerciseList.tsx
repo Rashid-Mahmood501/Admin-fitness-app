@@ -47,7 +47,7 @@ export function ExerciseList({
             <ExerciseCard
               key={exercise._id}
               exercise={exercise}
-              onEdit={() => onEditExercise(exercise._id)}
+              onEditExercise={onEditExercise}
             />
           ))
         ) : (

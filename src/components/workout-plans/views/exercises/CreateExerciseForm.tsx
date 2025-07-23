@@ -1,8 +1,10 @@
 "use client";
 
+import { fetchWrapper } from "@/utils/fetchwraper";
 import { useEffect, useState } from "react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { Exercise, ExerciseForm } from "../../types";
+import { AlternativeExercise } from "./AlternativeExercise";
 import { CategorySelector } from "./CategorySelector";
 import { FormField } from "./FormField";
 
@@ -25,11 +27,13 @@ export function CreateExerciseForm({
   const [exerciseForm, setExerciseForm] = useState<ExerciseForm>({
     workoutName: "",
     setType: "",
-    video: null,
+    video: "",
     muscleGroup: "",
     reps: "",
     additionalComments: "",
     workoutSuggestion: "",
+    alternativeCount: 0,
+    alternativeExercises: [],
   });
 
   useEffect(() => {
@@ -38,7 +42,7 @@ export function CreateExerciseForm({
       setExerciseForm({
         workoutName: editingExercise.name,
         setType: editingExercise.setType,
-        video: null,
+        video: "",
         muscleGroup: editingExercise.muscleGroup || "",
         reps: editingExercise.reps,
         additionalComments: editingExercise.comments || "",
@@ -55,10 +59,41 @@ export function CreateExerciseForm({
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setExerciseForm((prev) => ({ ...prev, video: e.target.files![0] }));
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("video", file);
+    toast.loading("Uploading video...", {
+      id: "uploading-video",
+    });
+    try {
+      const response = await fetchWrapper("/admin/workout/upload-video", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      if (response.videoUrl) {
+        setExerciseForm((prev) => ({ ...prev, video: response.videoUrl }));
+        toast.dismiss("uploading-video");
+        toast.success("Video uploaded!");
+      } else {
+        toast.error("Video upload failed");
+      }
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      toast.error("Error uploading video");
     }
+  };
+
+  const handleAlternativeDelete = (index: number) => {
+    setExerciseForm((prev) => ({
+      ...prev,
+      alternativeExercises: prev.alternativeExercises?.filter(
+        (_, i) => i !== index
+      ),
+    }));
   };
 
   const handleFormSubmit = () => {
@@ -191,9 +226,50 @@ export function CreateExerciseForm({
           />
         </div>
 
+        {exerciseForm.alternativeExercises &&
+          exerciseForm.alternativeExercises.length > 0 &&
+          exerciseForm.alternativeExercises.map((alternative, index) => (
+            <AlternativeExercise
+              key={index}
+              alternative={alternative.exercise}
+              index={index}
+              onChange={(i, updated) => {
+                setExerciseForm((prev) => ({
+                  ...prev,
+                  alternativeExercises: prev.alternativeExercises?.map(
+                    (alt, j) => (j === i ? { ...alt, exercise: updated } : alt)
+                  ),
+                }));
+              }}
+              onDelete={handleAlternativeDelete}
+            />
+          ))}
+
         <div className="flex space-x-4">
           <button
-            onClick={onBack}
+            onClick={
+              isEditMode
+                ? onBack
+                : () =>
+                    setExerciseForm((prev) => ({
+                      ...prev,
+                      alternativeExercises: [
+                        ...(prev.alternativeExercises || []),
+                        {
+                          category: "",
+                          exercise: {
+                            workoutName: "",
+                            setType: "",
+                            video: "",
+                            muscleGroup: "",
+                            reps: "",
+                            additionalComments: "",
+                            workoutSuggestion: "",
+                          },
+                        },
+                      ],
+                    }))
+            }
             className="w-[320px] px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
           >
             {isEditMode ? "Cancel" : "Add Alternative"}
@@ -203,7 +279,13 @@ export function CreateExerciseForm({
             disabled={loading}
             className="w-[320px] px-6 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update" : "Create")}
+            {loading
+              ? isEditMode
+                ? "Updating..."
+                : "Creating..."
+              : isEditMode
+              ? "Update"
+              : "Create"}
           </button>
         </div>
       </div>
