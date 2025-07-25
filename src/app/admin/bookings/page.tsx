@@ -28,12 +28,13 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await fetchWrapper("/admin/meeting/all");
+      const response = await fetchWrapper("/admin/meeting/all");      
       setBookings(
         response.data.map((item: any) => ({
           id: item._id,
           name: item.userId?.fullname || "Unknown",
           time: item.time,
+          email: item.userId?.email || "Unknown",
           type: item.location === "Zoom" ? "video" : "in-person",
           profileImage: item.userId?.profileImage || "/placeholder.png",
           _rawDate: item.date,

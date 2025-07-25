@@ -22,6 +22,9 @@ export default function BookingCard({ booking }: BookingCardProps) {
           <p className="font-semibold text-[#171616] truncate mb-1">
             {booking.name}
           </p>
+          <p className="text-gray-500 text-sm mb-1">
+            {booking.email}
+          </p>
           <p className="text-gray-500 text-sm">
             {booking.time}
           </p>
