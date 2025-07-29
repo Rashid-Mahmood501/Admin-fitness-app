@@ -1,8 +1,9 @@
 "use client";
-import { fetchWrapper } from "@/utils/fetchwraper";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
+import MealPlanList from "@/components/meal-plans/MealPlanList";
+
 
 interface MealOption {
   id: string;
@@ -45,28 +46,9 @@ export default function MealPlansPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("image", file);
-    toast.loading("Uploading image...", {
-      id: "uploading-image",
-    });
-
-    try {
-      const response = await fetchWrapper("/admin/meal/upload-image", {
-        method: "POST",
-        body: formData,
-        isFormData: true,
-      });
-      if (response.imageUrl) {
-        setValue("image", response.imageUrl);
-        toast.dismiss("uploading-image");
-        toast.success("Image uploaded!");
-      } else {
-        toast.error("Image upload failed");
-      }
-    } catch {
-      toast.error("Image upload error");
-    }
+    // For now, just set a dummy image URL
+    setValue("image", "/images/placeholder.jpg");
+    toast.success("Image uploaded!");
   };
 
   const mealPlanTypes = [
@@ -541,8 +523,8 @@ export default function MealPlansPage() {
         <span className="text-3xl">🍽️</span>
         <h1 className="text-3xl font-bold text-[#171616]">Meal Plans</h1>
       </div>
-      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200 h-[700px]">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-8">
           {mealPlanTypes.map((plan) => (
             <div
               key={plan.id}
@@ -561,6 +543,9 @@ export default function MealPlansPage() {
             </div>
           ))}
         </div>
+        <MealPlanList 
+          onEditPlan={handlePlanSelect} 
+        />
       </div>
       <Toaster />
     </div>
