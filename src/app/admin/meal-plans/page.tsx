@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
+import CreatedMealPlansList from "@/components/meal-plans/CreatedMealPlansList";
+import MealPlanEditForm from "@/components/meal-plans/MealPlanEditForm";
 
 
 interface MealOption {
@@ -22,6 +24,21 @@ interface DayData {
   isCompleted: boolean;
 }
 
+interface MealPlan {
+  id: string;
+  title: string;
+  type: string;
+  createdAt: string;
+  days: {
+    day: number;
+    mealOptions: MealOption[];
+  }[];
+  totalCalories: number;
+  totalProtein: number;
+  totalFat: number;
+  totalCarbs: number;
+}
+
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"];
 
 export default function MealPlansPage() {
@@ -36,6 +53,77 @@ export default function MealPlansPage() {
       isCompleted: false,
     }))
   );
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([
+    {
+      id: "1",
+      title: "Muscle Mass Gain Plan",
+      type: "muscle-mass",
+      createdAt: "2024-01-15T10:30:00Z",
+      days: [
+        {
+          day: 1,
+          mealOptions: [
+            {
+              id: "1",
+              foodName: "Oatmeal with Berries",
+              mealType: "breakfast",
+              calories: 350,
+              protein: 12,
+              fat: 8,
+              carbs: 55,
+              image: "/images/oatmeal.jpg",
+              preparation: "Cook oats with milk, top with berries and honey"
+            },
+            {
+              id: "2",
+              foodName: "Grilled Chicken Breast",
+              mealType: "lunch",
+              calories: 280,
+              protein: 35,
+              fat: 6,
+              carbs: 0,
+              image: "/images/chicken.jpg",
+              preparation: "Season with herbs and grill for 8-10 minutes"
+            },
+            {
+              id: "3",
+              foodName: "Salmon with Vegetables",
+              mealType: "dinner",
+              calories: 420,
+              protein: 38,
+              fat: 22,
+              carbs: 15,
+              image: "/images/salmon.jpg",
+              preparation: "Bake salmon with olive oil and serve with steamed vegetables"
+            }
+          ]
+        },
+        {
+          day: 2,
+          mealOptions: [
+            {
+              id: "4",
+              foodName: "Greek Yogurt with Nuts",
+              mealType: "breakfast",
+              calories: 320,
+              protein: 20,
+              fat: 15,
+              carbs: 25,
+              image: "/images/yogurt.jpg",
+              preparation: "Mix Greek yogurt with honey and top with mixed nuts"
+            }
+          ]
+        }
+      ],
+      totalCalories: 1370,
+      totalProtein: 105,
+      totalFat: 51,
+      totalCarbs: 95
+    }
+  ]);
+  const [editingMealPlan, setEditingMealPlan] = useState<MealPlan | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'create' | 'edit'>('list');
+  
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<MealOption>();
 
@@ -175,52 +263,35 @@ export default function MealPlansPage() {
       return;
     }
 
-    const organizedData: {
-      planTitle: string | null;
-      breakfast: Array<MealOption & { day: number }>;
-      lunch: Array<MealOption & { day: number }>;
-      dinner: Array<MealOption & { day: number }>;
-      snacks: Array<MealOption & { day: number }>;
-    } = {
-      planTitle: selectedPlan,
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-      snacks: []
-    };
+    // Calculate totals
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalFat = 0;
+    let totalCarbs = 0;
 
     dataToSave.forEach(day => {
-      day.mealOptions.forEach(option => {
-        switch(option.mealType) {
-          case 'breakfast':
-            organizedData.breakfast.push({
-              day: day.day,
-              ...option
-            });
-            break;
-          case 'lunch':
-            organizedData.lunch.push({
-              day: day.day,
-              ...option
-            });
-            break;
-          case 'dinner':
-            organizedData.dinner.push({
-              day: day.day,
-              ...option
-            });
-            break;
-          case 'snacks':
-            organizedData.snacks.push({
-              day: day.day,
-              ...option
-            });
-            break;
-        }
+      day.mealOptions.forEach(meal => {
+        totalCalories += meal.calories;
+        totalProtein += meal.protein;
+        totalFat += meal.fat;
+        totalCarbs += meal.carbs;
       });
     });
 
-    console.log("Organized meal plan data:", organizedData);
+    const newMealPlan: MealPlan = {
+      id: Date.now().toString(),
+      title: `Meal Plan for ${selectedPlan?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+      type: selectedPlan || 'custom',
+      createdAt: new Date().toISOString(),
+      days: dataToSave,
+      totalCalories,
+      totalProtein,
+      totalFat,
+      totalCarbs
+    };
+
+    setMealPlans(prev => [...prev, newMealPlan]);
+    setViewMode('list');
     reset();
     setDaysData(
       Array.from({ length: 7 }, (_, i) => ({
@@ -232,6 +303,30 @@ export default function MealPlansPage() {
     setSelectedDay(1);
     setSelectedMealType("breakfast");
     setCurrentOption(1);
+    setSelectedPlan(null);
+    toast.success("Meal plan created successfully!");
+  };
+
+  const handleEditMealPlan = (mealPlan: MealPlan) => {
+    setEditingMealPlan(mealPlan);
+    setViewMode('edit');
+  };
+
+  const handleSaveEditedMealPlan = (updatedMealPlan: MealPlan) => {
+    setMealPlans(prev => prev.map(plan => 
+      plan.id === updatedMealPlan.id ? updatedMealPlan : plan
+    ));
+    setViewMode('list');
+    setEditingMealPlan(null);
+  };
+
+  const handleCancelEdit = () => {
+    setViewMode('list');
+    setEditingMealPlan(null);
+  };
+
+  const handleCreateNew = () => {
+    setViewMode('create');
   };
 
   const getMealOptionsForCurrentDay = () => {
@@ -249,7 +344,19 @@ export default function MealPlansPage() {
     return options.length >= currentOption;
   };
 
-  if (selectedPlan) {
+  // Show edit form
+  if (viewMode === 'edit' && editingMealPlan) {
+    return (
+      <MealPlanEditForm
+        mealPlan={editingMealPlan}
+        onSave={handleSaveEditedMealPlan}
+        onCancel={handleCancelEdit}
+      />
+    );
+  }
+
+  // Show create form
+  if (viewMode === 'create' && selectedPlan) {
     const currentDayData = getCurrentDayData();
 
     return (
@@ -522,27 +629,38 @@ export default function MealPlansPage() {
         <span className="text-3xl">🍽️</span>
         <h1 className="text-3xl font-bold text-[#171616]">Meal Plans</h1>
       </div>
-      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {mealPlanTypes.map((plan) => (
-            <div
-              key={plan.id}
-              onClick={() => handlePlanSelect(plan.id)}
-              className="bg-white rounded-lg border border-black p-6 cursor-pointer hover:shadow-lg transition-all duration-200"
-            >
-              <div className="flex justify-center mb-4">
-                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white">+</span>
-                </div>
-              </div>
+      
+      {/* Show created meal plans list */}
+      <CreatedMealPlansList
+        mealPlans={mealPlans}
+        onEditPlan={handleEditMealPlan}
+        onCreateNew={handleCreateNew}
+      />
 
-              <h3 className="text-base font-medium text-[#171616] text-center">
-                {plan.title}
-              </h3>
-            </div>
-          ))}
+      {/* Show create options when creating new */}
+      {viewMode === 'create' && (
+        <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            {mealPlanTypes.map((plan) => (
+              <div
+                key={plan.id}
+                onClick={() => handlePlanSelect(plan.id)}
+                className="bg-white rounded-lg border border-black p-6 cursor-pointer hover:shadow-lg transition-all duration-200"
+              >
+                <div className="flex justify-center mb-4">
+                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                    <span className="text-3xl font-bold text-white">+</span>
+                  </div>
+                </div>
+
+                <h3 className="text-base font-medium text-[#171616] text-center">
+                  {plan.title}
+                </h3>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <Toaster />
     </div>
   );
