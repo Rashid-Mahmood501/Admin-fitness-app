@@ -15,6 +15,11 @@ const Sidebar = () => {
       icon: '🍽️'
     },
     {
+      name: 'Personalized Meal Plans',
+      href: '/admin/personalized',
+      icon: '👤'
+    },
+    {
       name: 'Workout Plans',
       href: '/admin/workout-plans',
       icon: '💪'

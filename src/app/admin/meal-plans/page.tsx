@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
-import MealPlanList from "@/components/meal-plans/MealPlanList";
 
 
 interface MealOption {
@@ -524,7 +523,7 @@ export default function MealPlansPage() {
         <h1 className="text-3xl font-bold text-[#171616]">Meal Plans</h1>
       </div>
       <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {mealPlanTypes.map((plan) => (
             <div
               key={plan.id}
@@ -543,9 +542,6 @@ export default function MealPlansPage() {
             </div>
           ))}
         </div>
-        <MealPlanList 
-          onEditPlan={handlePlanSelect} 
-        />
       </div>
       <Toaster />
     </div>
