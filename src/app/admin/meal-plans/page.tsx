@@ -12,7 +12,7 @@ interface MealOption {
   protein: number;
   fat: number;
   carbs: number;
-  image: string; // Now stores the image URL
+  image: string;
   preparation: string;
 }
 
@@ -22,10 +22,13 @@ interface DayData {
   isCompleted: boolean;
 }
 
+const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"];
+
 export default function MealPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState(1);
+  const [selectedMealType, setSelectedMealType] = useState<string>("breakfast");
+  const [currentOption, setCurrentOption] = useState(1);
   const [daysData, setDaysData] = useState<DayData[]>(
     Array.from({ length: 7 }, (_, i) => ({
       day: i + 1,
@@ -36,7 +39,6 @@ export default function MealPlansPage() {
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<MealOption>();
 
-  // Image upload handler
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -89,6 +91,8 @@ export default function MealPlansPage() {
   const handleBackToCards = () => {
     setSelectedPlan(null);
     setSelectedDay(1);
+    setSelectedMealType("breakfast");
+    setCurrentOption(1);
     setDaysData(
       Array.from({ length: 7 }, (_, i) => ({
         day: i + 1,
@@ -100,20 +104,8 @@ export default function MealPlansPage() {
   };
 
   const onSubmit = (data: MealOption) => {
-    const newMealOption: MealOption = {
-      ...data,
-      id: Date.now().toString(),
-      image: data.image,
-    };
-
-    setDaysData((prev) =>
-      prev.map((day) =>
-        day.day === selectedDay
-          ? { ...day, mealOptions: [...day.mealOptions, newMealOption] }
-          : day
-      )
-    );
-    reset();
+    console.log(data);
+    
   };
 
   const getCurrentDayData = () => {
@@ -133,20 +125,53 @@ export default function MealPlansPage() {
     return `Create Meal Plan For ${capitalizedPlanType}`;
   };
 
-  const shouldShowSaveNext = () => {
-    const currentDayData = getCurrentDayData();
-    return currentDayData.mealOptions.length >= 2;
+  const handleNext = () => {
+    const formData = watch();
+    if (formData.foodName) {
+      const newMealOption: MealOption = {
+        ...formData,
+        id: Date.now().toString(),
+        mealType: selectedMealType,
+      };
+      
+      console.log("Adding meal option:", newMealOption);
+      
+      setDaysData((prev) =>
+        prev.map((day) =>
+          day.day === selectedDay
+            ? { ...day, mealOptions: [...day.mealOptions, newMealOption] }
+            : day
+        )
+      );
+      
+      reset();
+      const currentMealTypeIndex = MEAL_TYPES.indexOf(selectedMealType);
+      
+      if (currentMealTypeIndex < MEAL_TYPES.length - 1) {
+        setSelectedMealType(MEAL_TYPES[currentMealTypeIndex + 1]);
+      } else {
+        if (currentOption < 3) {
+          setCurrentOption(currentOption + 1);
+          setSelectedMealType("breakfast");
+        } else {
+          if (selectedDay < 7) {
+            setSelectedDay(selectedDay + 1);
+            setCurrentOption(1);
+            setSelectedMealType("breakfast");
+          }
+        }
+      }
+    }
   };
 
-  const handleSave = async () => {
-    setIsLoading(true);
-
+  const handleSave = () => {
     const formDataToSave = watch();
     let updatedDaysData = daysData;
-    if (formDataToSave.foodName && formDataToSave.mealType) {
+    if (formDataToSave.foodName) {
       const newMealOption: MealOption = {
         ...formDataToSave,
         id: Date.now().toString(),
+        mealType: selectedMealType,
         image: formDataToSave.image,
       };
       updatedDaysData = daysData.map((day) =>
@@ -165,81 +190,82 @@ export default function MealPlansPage() {
     );
 
     if (dataToSave.length === 0) {
-      toast.error("Please add at least one meal option before saving.");
-      setIsLoading(false);
+      console.log("No meal options to save");
       return;
     }
 
-    const submit = {
+    const organizedData: {
+      planTitle: string | null;
+      breakfast: Array<MealOption & { day: number }>;
+      lunch: Array<MealOption & { day: number }>;
+      dinner: Array<MealOption & { day: number }>;
+      snacks: Array<MealOption & { day: number }>;
+    } = {
       planTitle: selectedPlan,
-      days: dataToSave,
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snacks: []
     };
 
-    try {
-      const response = await fetchWrapper("/admin/meal/save", {
-        method: "POST",
-        body: submit,
-        // isFormData: true,
+    dataToSave.forEach(day => {
+      day.mealOptions.forEach(option => {
+        switch(option.mealType) {
+          case 'breakfast':
+            organizedData.breakfast.push({
+              day: day.day,
+              ...option
+            });
+            break;
+          case 'lunch':
+            organizedData.lunch.push({
+              day: day.day,
+              ...option
+            });
+            break;
+          case 'dinner':
+            organizedData.dinner.push({
+              day: day.day,
+              ...option
+            });
+            break;
+          case 'snacks':
+            organizedData.snacks.push({
+              day: day.day,
+              ...option
+            });
+            break;
+        }
       });
+    });
 
-      if (
-        response.success ||
-        response.message === "Meal plan saved successfully"
-      ) {
-        toast.success("Meal Plan Saved");
-        reset();
-        setDaysData(
-          Array.from({ length: 7 }, (_, i) => ({
-            day: i + 1,
-            mealOptions: [],
-            isCompleted: false,
-          }))
-        );
-        setSelectedDay(1);
-      } else {
-        toast.error("Failed to save meal plan");
-      }
-    } catch (error) {
-      console.error("Error submitting meal plan:", error);
-      toast.error("Error submitting meal plan");
-    } finally {
-      setIsLoading(false);
-    }
+    console.log("Organized meal plan data:", organizedData);
+    reset();
+    setDaysData(
+      Array.from({ length: 7 }, (_, i) => ({
+        day: i + 1,
+        mealOptions: [],
+        isCompleted: false,
+      }))
+    );
+    setSelectedDay(1);
+    setSelectedMealType("breakfast");
+    setCurrentOption(1);
   };
 
-  const handleNext = () => {
-    const formData = watch();
-    if (formData.foodName && formData.mealType) {
-      const newMealOption: MealOption = {
-        ...formData,
-        id: Date.now().toString(),
-      };
-      const updatedDaysData = daysData.map((day) =>
-        day.day === selectedDay
-          ? {
-              ...day,
-              mealOptions: [...day.mealOptions, newMealOption],
-              isCompleted: true,
-            }
-          : day
-      );
-
-      setDaysData(updatedDaysData);
-      reset();
-
-      if (selectedDay < 7) {
-        setSelectedDay(selectedDay + 1);
-      }
-    }
-  };
-
-  const getButtonText = () => {
+  const getMealOptionsForCurrentDay = () => {
     const currentDayData = getCurrentDayData();
-    const optionCount = currentDayData.mealOptions.length;
+    return currentDayData.mealOptions;
+  };
 
-    if (optionCount === 0) return "Add Second Option";
-    if (optionCount === 1) return "Add Third Option";
-    return "";
+  const getMealOptionsByType = (mealType: string) => {
+    const options = getMealOptionsForCurrentDay();
+    return options.filter(option => option.mealType === mealType);
+  };
+
+  const isMealTypeCompleted = (mealType: string) => {
+    const options = getMealOptionsByType(mealType);
+    return options.length >= currentOption;
   };
 
   if (selectedPlan) {
@@ -265,7 +291,7 @@ export default function MealPlansPage() {
             {getPlanTitle(selectedPlan)}
           </h2>
 
-          <div className="flex space-x-4 mb-8 overflow-x-auto py-6 scrollbar-hide">
+          <div className="flex space-x-4 overflow-x-auto py-6 scrollbar-hide">
             {[1, 2, 3, 4, 5, 6, 7].map((day) => {
               const dayData = daysData.find((d) => d.day === day);
               const isCompleted = dayData?.isCompleted || false;
@@ -304,71 +330,94 @@ export default function MealPlansPage() {
             })}
           </div>
 
-          {currentDayData.mealOptions.map((option, index) => (
-            <div
-              key={option.id}
-              className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50"
-            >
-              <h4 className="font-semibold text-gray-700 mb-2">
-                Option {index + 1}
-              </h4>
-              <p className="text-sm text-gray-600">Food: {option.foodName}</p>
-              <p className="text-sm text-gray-600">Type: {option.mealType}</p>
-              <p className="text-sm text-gray-600">
-                Nutrition: {option.calories} cal, {option.protein}g protein,{" "}
-                {option.fat}g fat, {option.carbs}g carbs
-              </p>
-            </div>
-          ))}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Food Name
-                </label>
-                <input
-                  type="text"
-                  {...register("foodName")}
-                  className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
-                  placeholder="Enter food name"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Meal Type
-                </label>
-                <div className="relative">
-                  <select
-                    {...register("mealType")}
-                    className="w-full px-4 py-3 pr-10 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors appearance-none"
-                    required
-                  >
-                    <option value="">Select meal type</option>
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
+                      {/* Show previously entered meal options organized by meal type */}
+            {currentDayData.mealOptions.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-md font-semibold text-gray-700 mb-4">Previously Added Meals:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {MEAL_TYPES.map((mealType) => {
+                    const mealOptions = currentDayData.mealOptions.filter(
+                      option => option.mealType === mealType
+                    );
+                    
+                    if (mealOptions.length === 0) return null;
+                    
+                    return (
+                      <div key={mealType} className="border border-gray-200 rounded-lg p-4 bg-white">
+                        <h5 className="font-semibold text-gray-700 mb-2 capitalize">
+                          {mealType} ({mealOptions.length} item{mealOptions.length > 1 ? 's' : ''})
+                        </h5>
+                        {mealOptions.map((option) => (
+                          <div key={option.id} className="mb-2 p-2 bg-gray-50 rounded">
+                            <p className="text-sm font-medium text-gray-800">{option.foodName}</p>
+                            <p className="text-xs text-gray-600">
+                              {option.calories} cal | P: {option.protein}g | F: {option.fat}g | C: {option.carbs}g
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            )}
+
+            <div className="flex space-x-4 mb-8 overflow-x-auto py-2 scrollbar-hide">
+              {MEAL_TYPES.map((mealType) => {
+                const isCompleted = isMealTypeCompleted(mealType);
+                const isSelected = selectedMealType === mealType;
+
+                return (
+                  <button
+                    key={mealType}
+                    onClick={() => setSelectedMealType(mealType)}
+                    className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative capitalize ${
+                      isCompleted
+                        ? "bg-gray-600 text-white border-gray-600"
+                        : isSelected
+                        ? "bg-[#EC1D13] text-white border-[#EC1D13]"
+                        : "bg-white text-[#171616] border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{mealType}</span>
+                    {isCompleted && (
+                      <div className="flex items-center justify-center bg-gray-600 rounded-full w-6 h-6 absolute -top-2 -right-2 border-2 border-white">
+                        <svg
+                          className="w-5 h-5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Option {currentOption} - {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}
+              </h3>
+            </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Food Name
+              </label>
+              <input
+                type="text"
+                {...register("foodName")}
+                className="w-full px-4 py-3 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors"
+                placeholder="Enter food name"
+                required
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -454,44 +503,32 @@ export default function MealPlansPage() {
               />
             </div>
 
-            {currentDayData.mealOptions.length < 3 && (
-              <div className="flex items-center space-x-2 mt-6">
-                <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">i</span>
-                </div>
-                <span className="text-black font-medium">
-                  Need to add {3 - currentDayData.mealOptions.length} more diet
-                  option{3 - currentDayData.mealOptions.length !== 1 ? "s" : ""}
-                </span>
+            <div className="flex items-center space-x-2 mt-6">
+              <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">i</span>
               </div>
-            )}
+              <span className="text-black font-medium">
+                Adding {selectedMealType} for Option {currentOption}
+              </span>
+            </div>
 
-            {!shouldShowSaveNext() && (
-              <button
-                type="submit"
-                className="w-[320px] bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
-              >
-                {getButtonText()}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleNext}
+              className="w-[320px] bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              Next
+            </button>
           </form>
 
-          {shouldShowSaveNext() && (
-            <div className="flex space-x-4 mt-6">
-              <button
-                onClick={handleSave}
-                className="w-[320px] bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg"
-              >
-                {isLoading ? "Saving..." : "Save"}
-              </button>
-              <button
-                onClick={handleNext}
-                className="w-[320px] bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 shadow-md hover:shadow-lg"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <div className="flex space-x-4 mt-6">
+            <button
+              onClick={handleSave}
+              className="w-[320px] bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              Save
+            </button>
+          </div>
         </div>
         <Toaster />
       </div>
