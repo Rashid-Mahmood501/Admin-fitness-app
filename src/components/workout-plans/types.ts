@@ -66,3 +66,15 @@ export interface ExerciseSelectionStepProps {
 export interface WorkoutPlanHeaderProps {
   onBack: () => void;
 }
+
+export interface WorkoutPlan {
+  _id: string;
+  workoutPlanId: string;
+  title: string;
+  type: string;
+  createdAt: string;
+  selectedDays: number[];
+  dayCategories: { [key: number]: string };
+  dayExercises: { [key: number]: string[] };
+  exercises?: Exercise[];
+}
