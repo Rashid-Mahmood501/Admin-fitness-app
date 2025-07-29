@@ -1,10 +1,10 @@
 "use client";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import toast, { Toaster } from "react-hot-toast";
 import CreatedMealPlansList from "@/components/meal-plans/CreatedMealPlansList";
 import MealPlanEditForm from "@/components/meal-plans/MealPlanEditForm";
-
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import toast, { Toaster } from "react-hot-toast";
 
 interface MealOption {
   id: string;
@@ -46,6 +46,8 @@ export default function MealPlansPage() {
   const [selectedDay, setSelectedDay] = useState(1);
   const [selectedMealType, setSelectedMealType] = useState<string>("breakfast");
   const [currentOption, setCurrentOption] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [daysData, setDaysData] = useState<DayData[]>(
     Array.from({ length: 7 }, (_, i) => ({
       day: i + 1,
@@ -53,77 +55,10 @@ export default function MealPlansPage() {
       isCompleted: false,
     }))
   );
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>([
-    {
-      id: "1",
-      title: "Muscle Mass Gain Plan",
-      type: "muscle-mass",
-      createdAt: "2024-01-15T10:30:00Z",
-      days: [
-        {
-          day: 1,
-          mealOptions: [
-            {
-              id: "1",
-              foodName: "Oatmeal with Berries",
-              mealType: "breakfast",
-              calories: 350,
-              protein: 12,
-              fat: 8,
-              carbs: 55,
-              image: "/images/oatmeal.jpg",
-              preparation: "Cook oats with milk, top with berries and honey"
-            },
-            {
-              id: "2",
-              foodName: "Grilled Chicken Breast",
-              mealType: "lunch",
-              calories: 280,
-              protein: 35,
-              fat: 6,
-              carbs: 0,
-              image: "/images/chicken.jpg",
-              preparation: "Season with herbs and grill for 8-10 minutes"
-            },
-            {
-              id: "3",
-              foodName: "Salmon with Vegetables",
-              mealType: "dinner",
-              calories: 420,
-              protein: 38,
-              fat: 22,
-              carbs: 15,
-              image: "/images/salmon.jpg",
-              preparation: "Bake salmon with olive oil and serve with steamed vegetables"
-            }
-          ]
-        },
-        {
-          day: 2,
-          mealOptions: [
-            {
-              id: "4",
-              foodName: "Greek Yogurt with Nuts",
-              mealType: "breakfast",
-              calories: 320,
-              protein: 20,
-              fat: 15,
-              carbs: 25,
-              image: "/images/yogurt.jpg",
-              preparation: "Mix Greek yogurt with honey and top with mixed nuts"
-            }
-          ]
-        }
-      ],
-      totalCalories: 1370,
-      totalProtein: 105,
-      totalFat: 51,
-      totalCarbs: 95
-    }
-  ]);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [editingMealPlan, setEditingMealPlan] = useState<MealPlan | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'create' | 'edit'>('list');
-  
+  const [viewMode, setViewMode] = useState<"list" | "create" | "edit">("list");
+
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<MealOption>();
 
@@ -132,10 +67,31 @@ export default function MealPlansPage() {
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    try {
+      toast.loading("Uploading image...", { id: "image-upload" });
+      const formData = new FormData();
+      formData.append("image", file);
 
-    // For now, just set a dummy image URL
-    setValue("image", "/images/placeholder.jpg");
-    toast.success("Image uploaded!");
+      const response = await fetchWrapper<{ imageUrl: string }>(
+        "/admin/meal/upload-image",
+        {
+          method: "POST",
+          body: formData,
+          isFormData: true,
+        }
+      );
+      if (response.imageUrl) {
+        setValue("image", response.imageUrl);
+        toast.dismiss("image-upload");
+        toast.success("Image uploaded successfully!");
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error("Image upload failed. Please try again.");
+      return;
+    }
   };
 
   const mealPlanTypes = [
@@ -174,8 +130,27 @@ export default function MealPlansPage() {
 
   const onSubmit = (data: MealOption) => {
     console.log(data);
-    
   };
+
+  const getAllMealPlans = async () => {
+    try {
+      setFetching(true);
+      const response = await fetchWrapper<{
+        success: boolean;
+        data: MealPlan[];
+      }>("/admin/meal/all");
+      if (response.success) {
+        setMealPlans(response.data || []);
+        setFetching(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch meal plans:", error);
+      toast.error("Failed to load meal plans. Please try again.");
+      setFetching(false);
+    }
+  };
+
+  // console.log("Meal Plans:", mealPlans);
 
   const getCurrentDayData = () => {
     return daysData.find((day) => day.day === selectedDay) || daysData[0];
@@ -202,9 +177,7 @@ export default function MealPlansPage() {
         id: Date.now().toString(),
         mealType: selectedMealType,
       };
-      
-      console.log("Adding meal option:", newMealOption);
-      
+
       setDaysData((prev) =>
         prev.map((day) =>
           day.day === selectedDay
@@ -212,10 +185,10 @@ export default function MealPlansPage() {
             : day
         )
       );
-      
+
       reset();
       const currentMealTypeIndex = MEAL_TYPES.indexOf(selectedMealType);
-      
+
       if (currentMealTypeIndex < MEAL_TYPES.length - 1) {
         setSelectedMealType(MEAL_TYPES[currentMealTypeIndex + 1]);
       } else {
@@ -233,7 +206,7 @@ export default function MealPlansPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const formDataToSave = watch();
     let updatedDaysData = daysData;
     if (formDataToSave.foodName) {
@@ -269,8 +242,8 @@ export default function MealPlansPage() {
     let totalFat = 0;
     let totalCarbs = 0;
 
-    dataToSave.forEach(day => {
-      day.mealOptions.forEach(meal => {
+    dataToSave.forEach((day) => {
+      day.mealOptions.forEach((meal) => {
         totalCalories += meal.calories;
         totalProtein += meal.protein;
         totalFat += meal.fat;
@@ -280,18 +253,39 @@ export default function MealPlansPage() {
 
     const newMealPlan: MealPlan = {
       id: Date.now().toString(),
-      title: `Meal Plan for ${selectedPlan?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
-      type: selectedPlan || 'custom',
+      title: `Meal Plan for ${selectedPlan
+        ?.replace(/-/g, " ")
+        .replace(/\b\w/g, (l) => l.toUpperCase())}`,
+      type: selectedPlan || "muscle-mass",
       createdAt: new Date().toISOString(),
       days: dataToSave,
       totalCalories,
       totalProtein,
       totalFat,
-      totalCarbs
+      totalCarbs,
     };
 
-    setMealPlans(prev => [...prev, newMealPlan]);
-    setViewMode('list');
+    try {
+      setLoading(true);
+      toast.loading("Saving meal plan...", { id: "meal-plan-save" });
+      const response = await fetchWrapper("/admin/meal/save", {
+        method: "POST",
+        body: newMealPlan,
+      });
+      if (response.success) {
+        toast.dismiss("meal-plan-save");
+        toast.success("Meal plan saved successfully!");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error saving meal plan:", error);
+      toast.error("Failed to save meal plan. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    setMealPlans((prev) => [...prev, newMealPlan]);
+    setViewMode("list");
     reset();
     setDaysData(
       Array.from({ length: 7 }, (_, i) => ({
@@ -304,30 +298,35 @@ export default function MealPlansPage() {
     setSelectedMealType("breakfast");
     setCurrentOption(1);
     setSelectedPlan(null);
-    toast.success("Meal plan created successfully!");
   };
 
   const handleEditMealPlan = (mealPlan: MealPlan) => {
     setEditingMealPlan(mealPlan);
-    setViewMode('edit');
+    setViewMode("edit");
   };
 
   const handleSaveEditedMealPlan = (updatedMealPlan: MealPlan) => {
-    setMealPlans(prev => prev.map(plan => 
-      plan.id === updatedMealPlan.id ? updatedMealPlan : plan
-    ));
-    setViewMode('list');
+    setMealPlans((prev) =>
+      prev.map((plan) =>
+        plan.id === updatedMealPlan.id ? updatedMealPlan : plan
+      )
+    );
+    setViewMode("list");
     setEditingMealPlan(null);
   };
 
   const handleCancelEdit = () => {
-    setViewMode('list');
+    setViewMode("list");
     setEditingMealPlan(null);
   };
 
   const handleCreateNew = () => {
-    setViewMode('create');
+    setViewMode("create");
   };
+
+  useEffect(() => {
+    getAllMealPlans();
+  }, []);
 
   const getMealOptionsForCurrentDay = () => {
     const currentDayData = getCurrentDayData();
@@ -336,7 +335,7 @@ export default function MealPlansPage() {
 
   const getMealOptionsByType = (mealType: string) => {
     const options = getMealOptionsForCurrentDay();
-    return options.filter(option => option.mealType === mealType);
+    return options.filter((option) => option.mealType === mealType);
   };
 
   const isMealTypeCompleted = (mealType: string) => {
@@ -345,7 +344,7 @@ export default function MealPlansPage() {
   };
 
   // Show edit form
-  if (viewMode === 'edit' && editingMealPlan) {
+  if (viewMode === "edit" && editingMealPlan) {
     return (
       <MealPlanEditForm
         mealPlan={editingMealPlan}
@@ -355,8 +354,12 @@ export default function MealPlansPage() {
     );
   }
 
+  const isAllDaysCompleted = daysData.every(
+    (day) => day.mealOptions.length > 0
+  );
+
   // Show create form
-  if (viewMode === 'create' && selectedPlan) {
+  if (viewMode === "create" && selectedPlan) {
     const currentDayData = getCurrentDayData();
 
     return (
@@ -418,81 +421,95 @@ export default function MealPlansPage() {
             })}
           </div>
 
-                      {/* Show previously entered meal options organized by meal type */}
-            {currentDayData.mealOptions.length > 0 && (
-              <div className="mb-6">
-                <h4 className="text-md font-semibold text-gray-700 mb-4">Previously Added Meals:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {MEAL_TYPES.map((mealType) => {
-                    const mealOptions = currentDayData.mealOptions.filter(
-                      option => option.mealType === mealType
-                    );
-                    
-                    if (mealOptions.length === 0) return null;
-                    
-                    return (
-                      <div key={mealType} className="border border-gray-200 rounded-lg p-4 bg-white">
-                        <h5 className="font-semibold text-gray-700 mb-2 capitalize">
-                          {mealType} ({mealOptions.length} item{mealOptions.length > 1 ? 's' : ''})
-                        </h5>
-                        {mealOptions.map((option) => (
-                          <div key={option.id} className="mb-2 p-2 bg-gray-50 rounded">
-                            <p className="text-sm font-medium text-gray-800">{option.foodName}</p>
-                            <p className="text-xs text-gray-600">
-                              {option.calories} cal | P: {option.protein}g | F: {option.fat}g | C: {option.carbs}g
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+          {/* Show previously entered meal options organized by meal type */}
+          {currentDayData.mealOptions.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-4">
+                Previously Added Meals:
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {MEAL_TYPES.map((mealType) => {
+                  const mealOptions = currentDayData.mealOptions.filter(
+                    (option) => option.mealType === mealType
+                  );
 
-            <div className="flex space-x-4 mb-8 overflow-x-auto py-2 scrollbar-hide">
-              {MEAL_TYPES.map((mealType) => {
-                const isCompleted = isMealTypeCompleted(mealType);
-                const isSelected = selectedMealType === mealType;
+                  if (mealOptions.length === 0) return null;
 
-                return (
-                  <button
-                    key={mealType}
-                    onClick={() => setSelectedMealType(mealType)}
-                    className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative capitalize ${
-                      isCompleted
-                        ? "bg-gray-600 text-white border-gray-600"
-                        : isSelected
-                        ? "bg-[#EC1D13] text-white border-[#EC1D13]"
-                        : "bg-white text-[#171616] border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span>{mealType}</span>
-                    {isCompleted && (
-                      <div className="flex items-center justify-center bg-gray-600 rounded-full w-6 h-6 absolute -top-2 -right-2 border-2 border-white">
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
+                  return (
+                    <div
+                      key={mealType}
+                      className="border border-gray-200 rounded-lg p-4 bg-white"
+                    >
+                      <h5 className="font-semibold text-gray-700 mb-2 capitalize">
+                        {mealType} ({mealOptions.length} item
+                        {mealOptions.length > 1 ? "s" : ""})
+                      </h5>
+                      {mealOptions.map((option) => (
+                        <div
+                          key={option.id}
+                          className="mb-2 p-2 bg-gray-50 rounded"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                          <p className="text-sm font-medium text-gray-800">
+                            {option.foodName}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {option.calories} cal | P: {option.protein}g | F:{" "}
+                            {option.fat}g | C: {option.carbs}g
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          )}
 
-            <div className="mb-6 p-4 bg-gray-100 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-700">
-                Option {currentOption} - {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}
-              </h3>
-            </div>
+          <div className="flex space-x-4 mb-8 overflow-x-auto py-2 scrollbar-hide">
+            {MEAL_TYPES.map((mealType) => {
+              const isCompleted = isMealTypeCompleted(mealType);
+              const isSelected = selectedMealType === mealType;
+
+              return (
+                <button
+                  key={mealType}
+                  onClick={() => setSelectedMealType(mealType)}
+                  className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative capitalize ${
+                    isCompleted
+                      ? "bg-gray-600 text-white border-gray-600"
+                      : isSelected
+                      ? "bg-[#EC1D13] text-white border-[#EC1D13]"
+                      : "bg-white text-[#171616] border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <span>{mealType}</span>
+                  {isCompleted && (
+                    <div className="flex items-center justify-center bg-gray-600 rounded-full w-6 h-6 absolute -top-2 -right-2 border-2 border-white">
+                      <svg
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-700">
+              Option {currentOption} -{" "}
+              {selectedMealType.charAt(0).toUpperCase() +
+                selectedMealType.slice(1)}
+            </h3>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
@@ -608,20 +625,33 @@ export default function MealPlansPage() {
               Next
             </button>
           </form>
-
-          <div className="flex space-x-4 mt-6">
-            <button
-              onClick={handleSave}
-              className="w-[320px] bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg"
-            >
-              Save
-            </button>
-          </div>
+          {isAllDaysCompleted && (
+            <div className="flex space-x-4 mt-6">
+              <button
+                onClick={handleSave}
+                className="w-[320px] bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+                disabled={
+                  !getCurrentDayData().mealOptions.length ||
+                  !getMealOptionsByType(selectedMealType).length ||
+                  !isAllDaysCompleted
+                }
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+            </div>
+          )}
         </div>
         <Toaster />
       </div>
     );
   }
+
+  if (fetching)
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+      </div>
+    );
 
   return (
     <div className="space-y-6">
@@ -629,7 +659,7 @@ export default function MealPlansPage() {
         <span className="text-3xl">🍽️</span>
         <h1 className="text-3xl font-bold text-[#171616]">Meal Plans</h1>
       </div>
-      
+
       {/* Show created meal plans list */}
       <CreatedMealPlansList
         mealPlans={mealPlans}
@@ -638,7 +668,7 @@ export default function MealPlansPage() {
       />
 
       {/* Show create options when creating new */}
-      {viewMode === 'create' && (
+      {viewMode === "create" && (
         <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {mealPlanTypes.map((plan) => (

@@ -5,6 +5,7 @@ interface BookingCardProps {
 }
 
 export default function BookingCard({ booking }: BookingCardProps) {
+  console.log(booking);
   return (
     <div className="bg-white rounded-lg shadow-md py-4 pr-6 pl-4 border border-gray-100 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center space-x-6">

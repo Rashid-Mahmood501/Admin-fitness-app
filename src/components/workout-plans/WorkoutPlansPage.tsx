@@ -1,16 +1,16 @@
 "use client";
 import { fetchWrapper } from "@/utils/fetchwraper";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { CategorySelectionStep } from "./steps/CategorySelectionStep";
 import { DaySelectionStep } from "./steps/DaySelectionStep";
 import { ExerciseSelectionStep } from "./steps/ExerciseSelectionStep";
-import { WorkoutPlanTypes, WorkoutPlan } from "./types";
+import { WorkoutPlan, WorkoutPlanTypes } from "./types";
 import { CategoriesView } from "./views/CategoriesView";
 import { ExercisesView } from "./views/exercises/ExercisesView";
+import WorkoutPlanEditForm from "./WorkoutPlanEditForm";
 import { WorkoutPlanHeader } from "./WorkoutPlanHeader";
 import WorkoutPlansList from "./WorkoutPlansList";
-import WorkoutPlanEditForm from "./WorkoutPlanEditForm";
 
 export default function WorkoutPlansPage() {
   const [currentStep, setCurrentStep] = useState<
@@ -31,7 +31,8 @@ export default function WorkoutPlansPage() {
   const [selectedView, setSelectedView] = useState<string | null>(null);
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'create' | 'edit'>('list');
+  const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "create" | "edit">("list");
 
   const workoutPlanTypes: WorkoutPlanTypes[] = [
     {
@@ -56,49 +57,28 @@ export default function WorkoutPlansPage() {
     },
   ];
 
-  // Load dummy workout plans on component mount
-  useEffect(() => {
-    const dummyPlans: WorkoutPlan[] = [
-      {
-        _id: "1",
-        workoutPlanId: "muscle-mass",
-        title: "Muscle Mass Gain Plan",
-        type: "muscle-mass",
-        createdAt: "2024-01-15T10:30:00Z",
-        selectedDays: [1, 2, 3],
-        dayCategories: {
-          1: "chest",
-          2: "back",
-          3: "legs"
-        },
-        dayExercises: {
-          1: ["1", "2"],
-          2: ["3", "4"],
-          3: ["5", "6"]
-        }
-      },
-      {
-        _id: "2",
-        workoutPlanId: "weight-loss",
-        title: "Weight Loss Plan",
-        type: "weight-loss",
-        createdAt: "2024-01-20T14:20:00Z",
-        selectedDays: [1, 2, 3, 4],
-        dayCategories: {
-          1: "cardio",
-          2: "strength",
-          3: "cardio",
-          4: "strength"
-        },
-        dayExercises: {
-          1: ["7", "8"],
-          2: ["9", "10"],
-          3: ["11", "12"],
-          4: ["13", "14"]
-        }
+  const getAllWorkoutPlans = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchWrapper<{
+        success: boolean;
+        plans: WorkoutPlan[];
+      }>("/admin/workout-plan/all");
+      if (response.success) {
+        setWorkoutPlans(response.plans);
+        setLoading(false);
       }
-    ];
-    setWorkoutPlans(dummyPlans);
+    } catch (error) {
+      console.error("Failed to fetch workout plans:", error);
+      toast.error("Failed to fetch workout plans. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  // console.log("Workout plans:", workoutPlans);
+
+  useEffect(() => {
+    getAllWorkoutPlans();
   }, []);
 
   const handlePlanSelect = (planId: string) => {
@@ -161,40 +141,21 @@ export default function WorkoutPlansPage() {
       });
       if (response.success) {
         toast.success("Workout plan created successfully");
-        // Add the new plan to the list
-        const newPlan: WorkoutPlan = {
-          _id: Date.now().toString(),
-          workoutPlanId,
-          title: `Workout Plan for ${workoutPlanId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
-          type: workoutPlanId,
-          createdAt: new Date().toISOString(),
-          selectedDays,
-          dayCategories,
-          dayExercises
-        };
-        setWorkoutPlans(prev => [...prev, newPlan]);
-        setViewMode('list');
+        getAllWorkoutPlans();
+        setViewMode("list");
       } else {
         toast.error("Failed to create workout plan");
       }
     } catch (error) {
       console.error("Error creating workout plan:", error);
-      // For now, just log the data instead of making backend request
-      console.log("Workout plan data to save:", { workoutPlanId, selectedDays, dayCategories, dayExercises });
-      
-      // Add the new plan to the list anyway for demo purposes
-      const newPlan: WorkoutPlan = {
-        _id: Date.now().toString(),
+      console.log("Workout plan data to save:", {
         workoutPlanId,
-        title: `Workout Plan for ${workoutPlanId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
-        type: workoutPlanId,
-        createdAt: new Date().toISOString(),
         selectedDays,
         dayCategories,
-        dayExercises
-      };
-      setWorkoutPlans(prev => [...prev, newPlan]);
-      setViewMode('list');
+        dayExercises,
+      });
+
+      setViewMode("list");
       toast.success("Workout plan created successfully (demo mode)");
     } finally {
       setCreatingPlan(false);
@@ -208,29 +169,29 @@ export default function WorkoutPlansPage() {
 
   const handleEditPlan = (plan: WorkoutPlan) => {
     setEditingPlan(plan);
-    setViewMode('edit');
+    setViewMode("edit");
   };
 
-  const handleSaveEditedPlan = (updatedPlan: WorkoutPlan) => {
-    console.log("Updated workout plan data:", updatedPlan);
-    setWorkoutPlans(prev => 
-      prev.map(plan => 
-        plan._id === updatedPlan._id ? updatedPlan : plan
-      )
-    );
-    setEditingPlan(null);
-    setViewMode('list');
-    toast.success("Workout plan updated successfully");
+  const handleSaveEditedPlan = () => {
+    getAllWorkoutPlans();
   };
 
   const handleCancelEdit = () => {
     setEditingPlan(null);
-    setViewMode('list');
+    setViewMode("list");
   };
 
   const handleCreateNew = () => {
-    setViewMode('create');
+    setViewMode("create");
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   if (selectedView === "categories") {
     return <CategoriesView onBack={handleBackToMain} />;
@@ -285,7 +246,7 @@ export default function WorkoutPlansPage() {
   }
 
   // Show edit form when editing
-  if (viewMode === 'edit' && editingPlan) {
+  if (viewMode === "edit" && editingPlan) {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
@@ -304,14 +265,14 @@ export default function WorkoutPlansPage() {
   }
 
   // Show workout plans list
-  if (viewMode === 'list') {
+  if (viewMode === "list") {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
           <span className="text-3xl">💪</span>
           <h1 className="text-3xl font-bold text-[#171616]">Workout Plans</h1>
         </div>
-        
+
         <WorkoutPlansList
           workoutPlans={workoutPlans}
           onEditPlan={handleEditPlan}
@@ -324,7 +285,7 @@ export default function WorkoutPlansPage() {
   }
 
   // Show create options when creating new
-  if (viewMode === 'create') {
+  if (viewMode === "create") {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
@@ -338,7 +299,7 @@ export default function WorkoutPlansPage() {
               Create New Workout Plan
             </h2>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => setViewMode("list")}
               className="text-gray-600 hover:text-gray-800"
             >
               Back to Plans

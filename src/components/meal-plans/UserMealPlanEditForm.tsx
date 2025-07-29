@@ -4,43 +4,64 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 
-interface MealOption {
+export interface MealOption {
   id: string;
   foodName: string;
-  mealType: string;
+  mealType: "breakfast" | "lunch" | "dinner" | "snacks";
   calories: number;
   protein: number;
   fat: number;
   carbs: number;
-  image: string;
   preparation: string;
+  image: string;
 }
 
-interface MealPlan {
-  _id?: string;
+export interface DayMeal {
+  day: number;
+  mealOptions: MealOption[];
+  isCompleted: boolean;
+}
+
+export interface UserInfo {
+  _id: string;
+  fullname: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  profilePicture: string;
+  profileComplete: boolean;
+  mealGenerated: boolean;
+  createdAt: string; // ISO string
+  __v: number;
+  activityLevel: string;
+  age: number;
+  currentWeight: number;
+  gender: "male" | "female" | string;
+  goal: string;
+  height: number;
+  mealType: string;
+  weight: number;
+  workoutDays: string;
+}
+
+export interface MealPlan {
+  _id: string;
   id: string;
+  userId: UserInfo;
   title: string;
-  type: string;
-  createdAt: string;
-  days: {
-    day: number;
-    mealOptions: MealOption[];
-  }[];
-  totalCalories: number;
-  totalProtein: number;
-  totalFat: number;
-  totalCarbs: number;
+  type: "bulk-up" | "weight-loss" | string;
+  days: DayMeal[];
 }
 
 interface MealPlanEditFormProps {
   mealPlan: MealPlan;
-  onSave: (updatedMealPlan: MealPlan) => void;
+  onSave: () => void;
   onCancel: () => void;
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"];
 
-export default function MealPlanEditForm({
+export default function UserMealPlanEditForm({
   mealPlan,
   onSave,
   onCancel,
@@ -132,7 +153,7 @@ export default function MealPlanEditForm({
     };
     try {
       toast.loading("Updating meal...", { id: "meal-update" });
-      const result = await fetchWrapper("/admin/meal/update-meal-in-day", {
+      const result = await fetchWrapper("/admin/meal/update-user-meal-in-day", {
         method: "PUT",
         body: dataToSave,
       });
@@ -169,10 +190,13 @@ export default function MealPlanEditForm({
     };
     try {
       toast.loading("Deleting meal...", { id: "meal-delete" });
-      const result = await fetchWrapper("/admin/meal/delete-meal-from-day", {
-        method: "DELETE",
-        body: dataToSave,
-      });
+      const result = await fetchWrapper(
+        "/admin/meal/delete-user-meal-from-day",
+        {
+          method: "DELETE",
+          body: dataToSave,
+        }
+      );
       if (result.success) {
         toast.dismiss("meal-delete");
         setDaysData(updatedDaysData);
@@ -193,7 +217,7 @@ export default function MealPlanEditForm({
     const newMealOption: MealOption = {
       ...formData,
       id: Date.now().toString(),
-      mealType: selectedMealType,
+      mealType: selectedMealType as any,
     };
 
     const updatedDaysData = daysData.map((day) => {
@@ -214,7 +238,7 @@ export default function MealPlanEditForm({
 
     try {
       toast.loading("Adding meal...", { id: "meal-add" });
-      const result = await fetchWrapper("/admin/meal/add-meal-to-day", {
+      const result = await fetchWrapper("/admin/meal/add-user-meal-to-day", {
         method: "POST",
         body: dataToSave,
       });
@@ -233,31 +257,7 @@ export default function MealPlanEditForm({
   };
 
   const handleSavePlan = () => {
-    // Calculate totals
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalFat = 0;
-    let totalCarbs = 0;
-
-    daysData.forEach((day) => {
-      day.mealOptions.forEach((meal) => {
-        totalCalories += meal.calories;
-        totalProtein += meal.protein;
-        totalFat += meal.fat;
-        totalCarbs += meal.carbs;
-      });
-    });
-
-    const updatedMealPlan: MealPlan = {
-      ...mealPlan,
-      days: daysData,
-      totalCalories,
-      totalProtein,
-      totalFat,
-      totalCarbs,
-    };
-
-    onSave(updatedMealPlan);
+    onSave();
     toast.success("Meal plan updated successfully!");
   };
 

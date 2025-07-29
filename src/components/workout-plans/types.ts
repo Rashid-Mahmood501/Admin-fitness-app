@@ -69,12 +69,14 @@ export interface WorkoutPlanHeaderProps {
 
 export interface WorkoutPlan {
   _id: string;
-  workoutPlanId: string;
-  title: string;
-  type: string;
+  planId: string;
   createdAt: string;
-  selectedDays: number[];
-  dayCategories: { [key: number]: string };
-  dayExercises: { [key: number]: string[] };
-  exercises?: Exercise[];
+  updatedAt: string;
+  days: Day[];
+}
+
+export interface Day {
+  dayNumber: number;
+  category: string;
+  exercises: Exercise[];
 }
