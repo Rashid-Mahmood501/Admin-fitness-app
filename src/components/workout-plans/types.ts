@@ -19,6 +19,7 @@ export interface Exercise {
   comments?: string;
   suggestion?: string;
   alternatives?: Exercise[];
+  video?: string;
 }
 
 export interface ExerciseForm {
