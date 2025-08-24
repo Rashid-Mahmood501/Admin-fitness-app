@@ -80,24 +80,23 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
     if (isEditMode) {
       if (!editingExerciseId) return;
       setLoading(true);
-      const formDataToSave = new FormData();
-      formDataToSave.append("name", formData.workoutName);
-      formDataToSave.append("muscleGroup", formData.muscleGroup);
-      formDataToSave.append("setType", formData.setType);
-      formDataToSave.append("reps", formData.reps);
-      formDataToSave.append("comments", formData.additionalComments);
-      formDataToSave.append("suggestion", formData.workoutSuggestion);
-      if (formData.video) {
-        formDataToSave.append("video", formData.video as unknown as File);
-      }
+
+      const data = {
+        name: formData.workoutName,
+        muscleGroup: formData.muscleGroup,
+        setType: formData.setType,
+        reps: formData.reps,
+        comments: formData.additionalComments,
+        suggestion: formData.workoutSuggestion,
+        video: formData.video,
+      };
 
       try {
         const response = await fetchWrapper(
           `/admin/workout/update/${editingExerciseId}`,
           {
             method: "PUT",
-            body: formDataToSave,
-            isFormData: true,
+            body: data,
           }
         );
 
