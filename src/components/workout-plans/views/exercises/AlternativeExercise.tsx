@@ -54,6 +54,38 @@ export function AlternativeExercise({
     }
   };
 
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      toast.loading("Uploading image...", { id: "image-upload" });
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetchWrapper<{ imageUrl: string }>(
+        "/admin/meal/upload-image",
+        {
+          method: "POST",
+          body: formData,
+          isFormData: true,
+        }
+      );
+      if (response.imageUrl) {
+        onChange(index, { ...alternative, cardImage: response.imageUrl });
+        toast.dismiss("image-upload");
+        toast.success("Image uploaded successfully!");
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error("Image upload failed. Please try again.");
+      return;
+    }
+  };
+
   return (
     <div className="space-y-6 mb-3">
       <div className="bg-white  p-8">
@@ -107,6 +139,20 @@ export function AlternativeExercise({
                   type="file"
                   accept="video/*"
                   onChange={handleFileChange}
+                  className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
+                />
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Image
+              </label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Choose File
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
                   className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
                 />
               </label>

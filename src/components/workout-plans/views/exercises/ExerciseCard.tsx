@@ -36,8 +36,9 @@ export function ExerciseCard({
               }`}
             >
               <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                {/* eslint-disable-next-line */}
                 <img
-                  src="/exercise_image.png"
+                  src={exercise.cardImage || "/exercise_image.png"}
                   alt="Exercise Image"
                   width={isAlternative ? 224 : 320}
                   height={isAlternative ? 128 : 200}

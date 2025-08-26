@@ -89,6 +89,7 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
         comments: formData.additionalComments,
         suggestion: formData.workoutSuggestion,
         video: formData.video,
+        cardImage: formData.cardImage,
       };
 
       try {

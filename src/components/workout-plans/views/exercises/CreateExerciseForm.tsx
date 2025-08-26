@@ -1,19 +1,19 @@
-import type React from "react"
+import type React from "react";
 
-import { fetchWrapper } from "@/utils/fetchwraper"
-import { useEffect, useState } from "react"
-import toast, { Toaster } from "react-hot-toast"
-import type { Exercise, ExerciseForm } from "../../types"
-import { AlternativeExercise } from "./AlternativeExercise"
-import { CategorySelector } from "./CategorySelector"
-import { FormField } from "./FormField"
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import type { Exercise, ExerciseForm } from "../../types";
+import { AlternativeExercise } from "./AlternativeExercise";
+import { CategorySelector } from "./CategorySelector";
+import { FormField } from "./FormField";
 
 interface CreateExerciseFormProps {
-  isEditMode: boolean
-  editingExercise?: Exercise
-  onSubmit: (formData: ExerciseForm & { selectedCategory: string }) => void
-  onBack: () => void
-  loading: boolean
+  isEditMode: boolean;
+  editingExercise?: Exercise;
+  onSubmit: (formData: ExerciseForm & { selectedCategory: string }) => void;
+  onBack: () => void;
+  loading: boolean;
 }
 
 export function CreateExerciseForm({
@@ -23,83 +23,120 @@ export function CreateExerciseForm({
   onBack,
   loading,
 }: CreateExerciseFormProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("")
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [exerciseForm, setExerciseForm] = useState<ExerciseForm>({
     workoutName: "",
     setType: "",
     video: "",
+    cardImage: "",
     muscleGroup: "",
     reps: "",
     additionalComments: "",
     workoutSuggestion: "",
     alternativeCount: 0,
     alternativeExercises: [],
-  })
+  });
 
   useEffect(() => {
     if (isEditMode && editingExercise) {
-      setSelectedCategory(editingExercise.muscleGroup!)
+      setSelectedCategory(editingExercise.muscleGroup!);
       setExerciseForm({
         workoutName: editingExercise.name,
         setType: editingExercise.setType,
         video: editingExercise.video || "",
+        cardImage: editingExercise.cardImage || "",
         muscleGroup: editingExercise.muscleGroup || "",
         reps: editingExercise.reps,
         additionalComments: editingExercise.comments || "",
         workoutSuggestion: editingExercise.suggestion || "",
-      })
+      });
     }
-  }, [isEditMode, editingExercise])
+  }, [isEditMode, editingExercise]);
 
   const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category)
+    setSelectedCategory(category);
     setExerciseForm((prev) => ({
       ...prev,
       muscleGroup: category.charAt(0).toUpperCase() + category.slice(1),
-    }))
-  }
+    }));
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const formData = new FormData()
-    formData.append("video", file)
+    const formData = new FormData();
+    formData.append("video", file);
     toast.loading("Uploading video...", {
       id: "uploading-video",
-    })
+    });
     try {
       const response = await fetchWrapper("/admin/workout/upload-video", {
         method: "POST",
         body: formData,
         isFormData: true,
-      })
+      });
       if (response.videoUrl) {
-        setExerciseForm((prev) => ({ ...prev, video: response.videoUrl }))
-        toast.dismiss("uploading-video")
-        toast.success("Video uploaded!")
+        setExerciseForm((prev) => ({ ...prev, video: response.videoUrl }));
+        toast.dismiss("uploading-video");
+        toast.success("Video uploaded!");
       } else {
-        toast.error("Video upload failed")
+        toast.error("Video upload failed");
       }
     } catch (error) {
-      console.error("Error uploading video:", error)
-      toast.error("Error uploading video")
+      console.error("Error uploading video:", error);
+      toast.error("Error uploading video");
     }
-  }
+  };
+
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      toast.loading("Uploading image...", { id: "image-upload" });
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetchWrapper<{ imageUrl: string }>(
+        "/admin/meal/upload-image",
+        {
+          method: "POST",
+          body: formData,
+          isFormData: true,
+        }
+      );
+      if (response.imageUrl) {
+        setExerciseForm((prev) => ({ ...prev, cardImage: response.imageUrl }));
+        toast.dismiss("image-upload");
+        toast.success("Image uploaded successfully!");
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error("Image upload failed. Please try again.");
+      return;
+    }
+  };
 
   const handleAlternativeDelete = (index: number) => {
     setExerciseForm((prev) => ({
       ...prev,
-      alternativeExercises: prev.alternativeExercises?.filter((_, i) => i !== index),
-    }))
-  }
+      alternativeExercises: prev.alternativeExercises?.filter(
+        (_, i) => i !== index
+      ),
+    }));
+  };
 
   const handleFormSubmit = () => {
     onSubmit({
       ...exerciseForm,
       selectedCategory,
-    })
-  }
+    });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -121,34 +158,49 @@ export function CreateExerciseForm({
           {isEditMode ? "Edit Exercise" : "Create New Exercise"}
         </h2>
         <p className="text-gray-600 mb-6">
-          {isEditMode ? "Update the exercise details below" : "Select category in which you want to add exercise"}
+          {isEditMode
+            ? "Update the exercise details below"
+            : "Select category in which you want to add exercise"}
         </p>
 
-        <CategorySelector selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} />
+        <CategorySelector
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="space-y-4">
             <FormField
               label="Workout Name"
               value={exerciseForm.workoutName}
-              onChange={(value) => setExerciseForm((prev) => ({ ...prev, workoutName: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, workoutName: value }))
+              }
               placeholder="e.g., Dumbbell Incline Bench Press"
             />
 
             <FormField
               label="Set Type"
               value={exerciseForm.setType}
-              onChange={(value) => setExerciseForm((prev) => ({ ...prev, setType: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, setType: value }))
+              }
               placeholder="e.g., Normal Set"
             />
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Video</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Video
+              </label>
               {exerciseForm.video && (
                 <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Current Video:</span>
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">✓ Uploaded</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Current Video:
+                    </span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                      ✓ Uploaded
+                    </span>
                   </div>
                   <div className="relative">
                     <video
@@ -164,12 +216,14 @@ export function CreateExerciseForm({
                     <button
                       type="button"
                       onClick={() => {
-                        const video = document.querySelector("video") as HTMLVideoElement
+                        const video = document.querySelector(
+                          "video"
+                        ) as HTMLVideoElement;
                         if (video) {
                           if (video.paused) {
-                            video.play()
+                            video.play();
                           } else {
-                            video.pause()
+                            video.pause();
                           }
                         }
                       }}
@@ -180,7 +234,9 @@ export function CreateExerciseForm({
                     <span className="text-gray-300">|</span>
                     <button
                       type="button"
-                      onClick={() => setExerciseForm((prev) => ({ ...prev, video: "" }))}
+                      onClick={() =>
+                        setExerciseForm((prev) => ({ ...prev, video: "" }))
+                      }
                       className="text-sm text-red-600 hover:text-red-700 font-medium"
                     >
                       Remove Video
@@ -198,27 +254,88 @@ export function CreateExerciseForm({
                 />
               </label>
             </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Card Image
+              </label>
+              {exerciseForm.cardImage && (
+                <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">
+                      Current Image:
+                    </span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                      ✓ Uploaded
+                    </span>
+                  </div>
+                  <div className="relative">
+                    {/* eslint-disable-next-line */}
+                    <img
+                      src={exerciseForm.cardImage || "/placeholder.svg"}
+                      alt="Exercise card preview"
+                      className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-300"
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(exerciseForm.cardImage, "_blank")
+                      }
+                      className="text-sm text-[#EC1D13] hover:text-[#d41910] font-medium"
+                    >
+                      View Full Size
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExerciseForm((prev) => ({ ...prev, cardImage: "" }))
+                      }
+                      className="text-sm text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Remove Image
+                    </button>
+                  </div>
+                </div>
+              )}
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                {exerciseForm.cardImage ? "Replace Image" : "Choose Image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#EC1D13] focus:border-[#EC1D13] outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EC1D13] file:text-white hover:file:bg-[#d41910] file:cursor-pointer"
+                />
+              </label>
+            </div>
           </div>
 
           <div className="space-y-4">
             <FormField
               label="Muscle Group"
               value={exerciseForm.muscleGroup}
-              onChange={(value) => setExerciseForm((prev) => ({ ...prev, muscleGroup: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, muscleGroup: value }))
+              }
               placeholder="e.g., Chest"
             />
 
             <FormField
               label="Reps"
               value={exerciseForm.reps}
-              onChange={(value) => setExerciseForm((prev) => ({ ...prev, reps: value }))}
+              onChange={(value) =>
+                setExerciseForm((prev) => ({ ...prev, reps: value }))
+              }
               placeholder="e.g., 10/10/10"
             />
           </div>
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-bold text-gray-700 mb-2">Additional Comments</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Additional Comments
+          </label>
           <textarea
             value={exerciseForm.additionalComments}
             onChange={(e) =>
@@ -234,7 +351,9 @@ export function CreateExerciseForm({
         </div>
 
         <div className="mb-8">
-          <label className="block text-sm font-bold text-gray-700 mb-2">Workout Suggestion (Optional)</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Workout Suggestion (Optional)
+          </label>
           <input
             type="text"
             value={exerciseForm.workoutSuggestion}
@@ -259,10 +378,10 @@ export function CreateExerciseForm({
               onChange={(i, updated) => {
                 setExerciseForm((prev) => ({
                   ...prev,
-                  alternativeExercises: prev.alternativeExercises?.map((alt, j) =>
-                    j === i ? { ...alt, exercise: updated } : alt,
+                  alternativeExercises: prev.alternativeExercises?.map(
+                    (alt, j) => (j === i ? { ...alt, exercise: updated } : alt)
                   ),
-                }))
+                }));
               }}
               onDelete={handleAlternativeDelete}
             />
@@ -284,6 +403,7 @@ export function CreateExerciseForm({
                             workoutName: "",
                             setType: "",
                             video: "",
+                            cardImage: "",
                             muscleGroup: "",
                             reps: "",
                             additionalComments: "",
@@ -302,11 +422,17 @@ export function CreateExerciseForm({
             disabled={loading}
             className="w-[320px] px-6 py-3 bg-[#EC1D13] text-white rounded-lg font-semibold hover:bg-[#d41910] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (isEditMode ? "Updating..." : "Creating...") : isEditMode ? "Update" : "Create"}
+            {loading
+              ? isEditMode
+                ? "Updating..."
+                : "Creating..."
+              : isEditMode
+              ? "Update"
+              : "Create"}
           </button>
         </div>
       </div>
       <Toaster />
     </div>
-  )
+  );
 }

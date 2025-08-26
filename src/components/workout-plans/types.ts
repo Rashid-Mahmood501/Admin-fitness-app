@@ -20,12 +20,14 @@ export interface Exercise {
   suggestion?: string;
   alternatives?: Exercise[];
   video?: string;
+  cardImage?: string;
 }
 
 export interface ExerciseForm {
   workoutName: string;
   setType: string;
   video: string;
+  cardImage: string;
   muscleGroup: string;
   reps: string;
   additionalComments: string;
