@@ -399,6 +399,7 @@ export default function MealPlanEditForm({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <div className="w-24 h-24 mb-2 rounded-lg overflow-hidden">
+                      {/* eslint-disable-next-line  */}
                       <img
                         src={meal.image}
                         alt={meal.foodName}

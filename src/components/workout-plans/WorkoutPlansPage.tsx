@@ -277,6 +277,7 @@ export default function WorkoutPlansPage() {
           workoutPlans={workoutPlans}
           onEditPlan={handleEditPlan}
           onCreateNew={handleCreateNew}
+          getAllWorkoutPlans={getAllWorkoutPlans}
         />
 
         <Toaster />

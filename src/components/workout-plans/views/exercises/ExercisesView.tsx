@@ -169,6 +169,7 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
           onFilterChange={setFilterCategory}
           onCreateExercise={handleCreateExercise}
           onEditExercise={handleEditExercise}
+          fetchExercises={fetchExercises}
         />
       )}
       <Toaster />

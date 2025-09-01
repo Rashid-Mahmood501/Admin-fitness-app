@@ -1,16 +1,46 @@
+import DeleteModal from "@/components/DeleteModal";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { Exercise } from "../../types";
 
 interface ExerciseCardProps {
   exercise: Exercise;
   onEditExercise: (exerciseId: string) => void;
   isAlternative?: boolean;
+  fetchExercises: () => void;
 }
 
 export function ExerciseCard({
   exercise,
   onEditExercise,
   isAlternative = false,
+  fetchExercises,
 }: ExerciseCardProps) {
+  const [selectedExercise, setSelectedExercise] = useState<string>("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  const handleDelete = async (exerciseId: string) => {
+    console.log("Delete exercise with ID:", exerciseId);
+    try {
+      toast.loading("Deleting exercise...", { id: "exercise-delete" });
+      const result = await fetchWrapper(`/admin/workout/delete/${exerciseId}`, {
+        method: "DELETE",
+      });
+      if (result.success) {
+        toast.dismiss("exercise-delete");
+        toast.success("Exercise deleted successfully!");
+        fetchExercises();
+      }
+    } catch (error) {
+      console.error("Error deleting exercise:", error);
+      toast.dismiss("exercise-delete");
+      toast.error("Failed to delete exercise.");
+    } finally {
+      setDeleteModalOpen(false);
+      setSelectedExercise("");
+    }
+  };
   return (
     <div
       className={`rounded-lg p-4 ${
@@ -44,6 +74,17 @@ export function ExerciseCard({
                   height={isAlternative ? 128 : 200}
                   className="w-full h-full object-cover"
                 />
+              </div>
+              <div className="absolute top-4 left-4">
+                <button
+                  onClick={() => {
+                    setSelectedExercise(exercise._id || "");
+                    setDeleteModalOpen(true);
+                  }}
+                  className="px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs"
+                >
+                  Delete
+                </button>
               </div>
               <div className="absolute top-4 right-4">
                 <button
@@ -98,6 +139,7 @@ export function ExerciseCard({
                       exercise={alt}
                       onEditExercise={onEditExercise}
                       isAlternative={true}
+                      fetchExercises={fetchExercises}
                     />
                   </div>
                 ))}
@@ -108,6 +150,14 @@ export function ExerciseCard({
           </div>
         )}
       </div>
+      {deleteModalOpen && (
+        <DeleteModal
+          description="Are you sure you want to delete this exercise?"
+          onCancel={() => setDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(selectedExercise)}
+        />
+      )}
+      <Toaster />
     </div>
   );
 }

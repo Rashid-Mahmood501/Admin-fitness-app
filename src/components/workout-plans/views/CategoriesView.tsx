@@ -1,11 +1,12 @@
 "use client";
 
+import DeleteModal from "@/components/DeleteModal";
+import Loader from "@/components/Loader";
 import { fetchWrapper } from "@/utils/fetchwraper";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { Category } from "../types";
 import { WorkoutPlanHeader } from "../WorkoutPlanHeader";
-import Loader from "@/components/Loader";
 
 interface CategoriesViewProps {
   onBack: () => void;
@@ -19,6 +20,8 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const fetchCategories = async () => {
     try {
@@ -94,6 +97,31 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
     setEditingCategory(null);
   };
 
+  const handleDelete = async (categoryId: string) => {
+    console.log("Delete category with ID:", categoryId);
+    try {
+      toast.loading("Deleting category...", { id: "category-delete" });
+      const result = await fetchWrapper(
+        `/admin/workout-category/delete/${categoryId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (result.success) {
+        toast.dismiss("category-delete");
+        toast.success("Category deleted successfully!");
+        fetchCategories();
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.dismiss("category-delete");
+      toast.error("Failed to delete category.");
+    } finally {
+      setDeleteModalOpen(false);
+      setSelectedCategory("");
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -114,24 +142,35 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
                 key={category._id}
                 className="bg-white rounded-lg border border-black p-6 relative"
               >
-                <button
-                  onClick={() => handleEditCategory(category)}
-                  className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4 text-black"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="mb-2">
+                  <button
+                    onClick={() => handleEditCategory(category)}
+                    className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-4 h-4 text-black"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(category._id || "");
+                      setDeleteModalOpen(true);
+                    }}
+                    className="absolute top-2 left-2 px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
+                </div>
                 <h3 className="text-base font-medium text-[#171616] text-center">
                   {category.name}
                 </h3>
@@ -190,12 +229,26 @@ export function CategoriesView({ onBack }: CategoriesViewProps) {
                 disabled={!categoryName.trim() || submitting}
                 className="flex-1 bg-[#EC1D13] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#d41910] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? (modalType === "create" ? "Creating..." : "Updating...") : (modalType === "create" ? "Create" : "Update")}
+                {submitting
+                  ? modalType === "create"
+                    ? "Creating..."
+                    : "Updating..."
+                  : modalType === "create"
+                  ? "Create"
+                  : "Update"}
               </button>
             </div>
           </div>
         </div>
       )}
+      {deleteModalOpen && (
+        <DeleteModal
+          description="Are you sure you want to delete this category?"
+          onCancel={() => setDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(selectedCategory)}
+        />
+      )}
+
       <Toaster />
     </div>
   );

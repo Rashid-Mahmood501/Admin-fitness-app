@@ -28,7 +28,7 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await fetchWrapper("/admin/meeting/all");      
+      const response = await fetchWrapper("/admin/meeting/all");  
       setBookings(
         response.data.map((item: any) => ({
           id: item._id,

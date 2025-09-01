@@ -8,6 +8,7 @@ interface ExerciseListProps {
   onFilterChange: (category: string) => void;
   onCreateExercise: () => void;
   onEditExercise: (exerciseId: string) => void;
+  fetchExercises: () => void;
 }
 
 export function ExerciseList({
@@ -16,6 +17,7 @@ export function ExerciseList({
   onFilterChange,
   onCreateExercise,
   onEditExercise,
+  fetchExercises,
 }: ExerciseListProps) {
   const filteredExercises = exercises.filter(
     (exercise) => exercise.muscleGroup === filterCategory
@@ -48,6 +50,7 @@ export function ExerciseList({
               key={exercise._id}
               exercise={exercise}
               onEditExercise={onEditExercise}
+              fetchExercises={fetchExercises}
             />
           ))
         ) : (

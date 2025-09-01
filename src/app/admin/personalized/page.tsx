@@ -116,7 +116,11 @@ export default function PersonalizedMealPlansPage() {
             onCancel={handleCancelEdit}
           />
         ) : (
-          <MealPlanList onEditPlan={handleEditPlan} mealPlans={mealPlans} />
+          <MealPlanList
+            onEditPlan={handleEditPlan}
+            mealPlans={mealPlans}
+            getAllUserMealPlans={getAllUserMealPlans}
+          />
         )}
       </div>
     </div>

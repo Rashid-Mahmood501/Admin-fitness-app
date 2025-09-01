@@ -1,10 +1,11 @@
 "use client";
 
+import DeleteModal from "@/components/DeleteModal";
+import Loader from "@/components/Loader";
 import { fetchWrapper } from "@/utils/fetchwraper";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
-import Loader from "@/components/Loader";
 
 interface Supplement {
   _id?: string;
@@ -15,9 +16,12 @@ interface Supplement {
 
 export default function SupplementsPage() {
   const { register, handleSubmit, reset } = useForm<Supplement>();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [fetchingSupplements, setFetchingSupplements] = useState(true);
+  const [selectedSupplementId, setSelectedSupplementId] = useState<string>("");
 
   useEffect(() => {
     fetchSupplements();
@@ -65,6 +69,28 @@ export default function SupplementsPage() {
       throw err;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      setDeleteLoading(true);
+      const response = await fetchWrapper(`/admin/supplement/delete/${id}`, {
+        method: "DELETE",
+      });
+      if (!response) {
+        throw new Error("Failed to delete supplement");
+      }
+      toast.success("Supplement deleted successfully!");
+      await fetchSupplements();
+      setDeleteModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to delete supplement");
+      console.error("Error deleting supplement:", error);
+    } finally {
+      setDeleteLoading(false);
+      setSelectedSupplementId("");
+      setDeleteModalOpen(false);
     }
   };
 
@@ -152,6 +178,9 @@ export default function SupplementsPage() {
                   <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
                     Created At
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -172,6 +201,17 @@ export default function SupplementsPage() {
                           ? new Date(supplement.createdAt).toLocaleDateString()
                           : "N/A"}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => {
+                            setSelectedSupplementId(supplement._id || "");
+                            setDeleteModalOpen(true);
+                          }}
+                          className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition"
+                        >
+                          {deleteLoading ? "Deleting..." : "Delete"}
+                        </button>
+                      </td>
                     </tr>
                   ))}
               </tbody>
@@ -180,6 +220,13 @@ export default function SupplementsPage() {
         )}
       </div>
       <Toaster position="top-right" />
+      {deleteModalOpen && (
+        <DeleteModal
+          onCancel={() => setDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(selectedSupplementId)}
+          description="Are you sure you want to delete this supplement?"
+        />
+      )}
     </div>
   );
 }

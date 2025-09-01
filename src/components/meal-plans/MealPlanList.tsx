@@ -1,11 +1,47 @@
 import { MealPlan } from "@/app/admin/personalized/page";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import DeleteModal from "../DeleteModal";
 
 interface MealPlanListProps {
   onEditPlan: (plan: MealPlan) => void;
   mealPlans: MealPlan[];
+  getAllUserMealPlans: () => void;
 }
 
-export default function MealPlanList({ onEditPlan , mealPlans}: MealPlanListProps) {
+export default function MealPlanList({
+  onEditPlan,
+  mealPlans,
+  getAllUserMealPlans,
+}: MealPlanListProps) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedMealPlanId, setSelectedMealPlanId] = useState<string>("");
+
+  const handleDelete = async (mealPlanId: string) => {
+    console.log(mealPlanId);
+    try {
+      toast.loading("Deleting meal...", { id: "meal-delete" });
+      const result = await fetchWrapper(
+        `/admin/meal/delete-user-meal-plan/${mealPlanId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (result.success) {
+        toast.dismiss("meal-delete");
+        toast.success("Meal deleted successfully!");
+        getAllUserMealPlans();
+      }
+    } catch (error) {
+      console.error("Error deleting meal plan:", error);
+      toast.dismiss("meal-delete");
+      toast.error("Failed to delete meal.");
+    } finally {
+      setDeleteModalOpen(false);
+      setSelectedMealPlanId("");
+    }
+  };
   return (
     <div className="mt-8">
       <h2 className="text-xl font-bold text-[#171616] mb-6">Meal Plans</h2>
@@ -18,6 +54,7 @@ export default function MealPlanList({ onEditPlan , mealPlans}: MealPlanListProp
             {/* User Profile and Demographics */}
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
+                {/* eslint-disable-next-line  */}
                 <img
                   src={
                     item?.userId?.profilePicture ||
@@ -73,7 +110,16 @@ export default function MealPlanList({ onEditPlan , mealPlans}: MealPlanListProp
                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                     />
                   </svg>
-                  <span>Edit Meal Plan</span>
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMealPlanId(item?._id || "");
+                    setDeleteModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -87,6 +133,14 @@ export default function MealPlanList({ onEditPlan , mealPlans}: MealPlanListProp
           </div>
         ))}
       </div>
+      {deleteModalOpen && (
+        <DeleteModal
+          description="Are you sure you want to delete this meal plan?"
+          onCancel={() => setDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(selectedMealPlanId)}
+        />
+      )}
+      <Toaster />
     </div>
   );
 }

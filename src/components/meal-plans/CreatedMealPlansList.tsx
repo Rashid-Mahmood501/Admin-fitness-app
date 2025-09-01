@@ -1,3 +1,8 @@
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import DeleteModal from "../DeleteModal";
+
 interface MealOption {
   id: string;
   foodName: string;
@@ -11,6 +16,7 @@ interface MealOption {
 }
 
 interface MealPlan {
+  _id?: string;
   id: string;
   title: string;
   type: string;
@@ -29,13 +35,17 @@ interface CreatedMealPlansListProps {
   mealPlans: MealPlan[];
   onEditPlan: (mealPlan: MealPlan) => void;
   onCreateNew: () => void;
+  getAllMealPlans: () => void;
 }
 
 export default function CreatedMealPlansList({
   mealPlans,
   onEditPlan,
   onCreateNew,
+  getAllMealPlans,
 }: CreatedMealPlansListProps) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedMealPlanId, setSelectedMealPlanId] = useState<string>("");
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -54,6 +64,31 @@ export default function CreatedMealPlansList({
         day.mealOptions.filter((meal) => meal.mealType === mealType).length
       );
     }, 0);
+  };
+
+  const handleDelete = async (mealPlanId: string) => {
+    console.log("Delete meal plan with ID:", mealPlanId);
+    try {
+      toast.loading("Deleting meal...", { id: "meal-delete" });
+      const result = await fetchWrapper(
+        `/admin/meal/delete-meal-plan/${mealPlanId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (result.success) {
+        toast.dismiss("meal-delete");
+        toast.success("Meal deleted successfully!");
+        getAllMealPlans();
+      }
+    } catch (error) {
+      console.error("Error deleting meal plan:", error);
+      toast.dismiss("meal-delete");
+      toast.error("Failed to delete meal.");
+    } finally {
+      setDeleteModalOpen(false);
+      setSelectedMealPlanId("");
+    }
   };
 
   return (
@@ -201,11 +236,30 @@ export default function CreatedMealPlansList({
                 <p className="text-sm text-gray-500">
                   Created on {formatDate(mealPlan.createdAt)}
                 </p>
+                <div className="flex w-full justify-end">
+                  <button
+                    onClick={() => {
+                      setSelectedMealPlanId(mealPlan._id || "");
+                      setDeleteModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium "
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      {deleteModalOpen && (
+        <DeleteModal
+          description="Are you sure you want to delete this meal plan?"
+          onCancel={() => setDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(selectedMealPlanId)}
+        />
+      )}
+      <Toaster />
     </div>
   );
 }

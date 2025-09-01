@@ -1,19 +1,27 @@
 "use client";
 
-import type { JSX } from "react";
+import { fetchWrapper } from "@/utils/fetchwraper";
+import { useState, type JSX } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import DeleteModal from "../DeleteModal";
 import type { WorkoutPlan } from "./types";
 
 interface WorkoutPlansListProps {
   workoutPlans: WorkoutPlan[];
   onEditPlan: (plan: WorkoutPlan) => void;
   onCreateNew: () => void;
+  getAllWorkoutPlans: () => void;
 }
 
 export default function WorkoutPlansList({
   workoutPlans,
   onEditPlan,
   onCreateNew,
+  getAllWorkoutPlans,
 }: WorkoutPlansListProps) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<string>("");
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -105,6 +113,31 @@ export default function WorkoutPlansList({
         </svg>
       )
     );
+  };
+
+  const handleDelete = async (exerciseId: string) => {
+    console.log("Delete exercise with ID:", exerciseId);
+    try {
+      toast.loading("Deleting exercise...", { id: "exercise-delete" });
+      const result = await fetchWrapper(
+        `/admin/workout-plan/delete/${exerciseId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (result.success) {
+        toast.dismiss("exercise-delete");
+        toast.success("Exercise deleted successfully!");
+        getAllWorkoutPlans();
+      }
+    } catch (error) {
+      console.error("Error deleting exercise:", error);
+      toast.dismiss("exercise-delete");
+      toast.error("Failed to delete exercise.");
+    } finally {
+      setDeleteModalOpen(false);
+      setSelectedExercise("");
+    }
   };
 
   return (
@@ -211,7 +244,7 @@ export default function WorkoutPlansList({
                       <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                         {getPlanTypeIcon(plan.planId)}
                       </div>
-                      <button
+                      {/* <button
                         onClick={() => onEditPlan(plan)}
                         className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all duration-200 backdrop-blur-sm"
                       >
@@ -228,6 +261,15 @@ export default function WorkoutPlansList({
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                           />
                         </svg>
+                      </button> */}
+                      <button
+                        onClick={() => {
+                          setSelectedExercise(plan._id || "");
+                          setDeleteModalOpen(true);
+                        }}
+                        className="px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs"
+                      >
+                        Delete
                       </button>
                     </div>
                     <h3 className="text-xl font-bold mb-2 leading-tight">
@@ -352,6 +394,14 @@ export default function WorkoutPlansList({
           </div>
         )}
       </div>
+      {deleteModalOpen && (
+        <DeleteModal
+          description="Are you sure you want to delete this exercise?"
+          onCancel={() => setDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(selectedExercise)}
+        />
+      )}
+      <Toaster />
     </div>
   );
 }

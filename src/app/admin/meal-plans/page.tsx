@@ -665,6 +665,7 @@ export default function MealPlansPage() {
         mealPlans={mealPlans}
         onEditPlan={handleEditMealPlan}
         onCreateNew={handleCreateNew}
+        getAllMealPlans={getAllMealPlans}
       />
 
       {/* Show create options when creating new */}
