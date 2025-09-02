@@ -101,18 +101,15 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
           }
         );
 
-        if (
-          response.success ||
-          response.message === "Meal plan saved successfully"
-        ) {
-          toast.success("Meal Plan Saved");
+        if (response.success) {
+          toast.success("Exercise Saved");
           fetchExercises();
         } else {
-          toast.error("Failed to save meal plan");
+          toast.error("Failed to save exercise");
         }
       } catch (error) {
-        console.error("Error submitting meal plan:", error);
-        toast.error("Error submitting meal plan");
+        console.error("Error submitting exercise:", error);
+        toast.error("Error submitting exercise");
       } finally {
         setLoading(false);
         handleBackToExercises();
@@ -124,18 +121,15 @@ export function ExercisesView({ onBack }: { onBack: () => void }) {
           method: "POST",
           body: formData,
         });
-        if (
-          response.success ||
-          response.message === "Meal plan saved successfully"
-        ) {
-          toast.success("Meal Plan Saved");
+        if (response.success) {
+          toast.success("Exercise Saved");
           fetchExercises();
         } else {
-          toast.error("Failed to save meal plan");
+          toast.error("Failed to save exercise");
         }
       } catch (error) {
-        console.error("Error submitting meal plan:", error);
-        toast.error("Error submitting meal plan");
+        console.error("Error submitting exercise:", error);
+        toast.error("Error submitting exercise");
       } finally {
         setLoading(false);
         handleBackToExercises();

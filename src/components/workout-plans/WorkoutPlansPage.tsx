@@ -156,7 +156,7 @@ export default function WorkoutPlansPage() {
       });
 
       setViewMode("list");
-      toast.success("Workout plan created successfully (demo mode)");
+      toast.success("Workout plan created successfully");
     } finally {
       setCreatingPlan(false);
       setShowMultiStepFlow(false);
