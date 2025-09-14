@@ -171,7 +171,14 @@ export default function MealPlansPage() {
 
   const handleNext = () => {
     const formData = watch();
-    if (formData.foodName) {
+    if (
+      formData.foodName &&
+      formData.calories &&
+      formData.protein &&
+      formData.fat &&
+      formData.carbs &&
+      formData.preparation
+    ) {
       const newMealOption: MealOption = {
         ...formData,
         id: Date.now().toString(),
