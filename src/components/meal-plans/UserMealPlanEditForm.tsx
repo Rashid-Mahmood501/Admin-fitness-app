@@ -256,9 +256,24 @@ export default function UserMealPlanEditForm({
     }
   };
 
-  const handleSavePlan = () => {
-    onSave();
-    toast.success("Meal plan updated successfully!");
+  const handleSavePlan = async () => {
+    try {
+      toast.loading("Saving meal...", { id: "meal-save" });
+      const result = await fetchWrapper("/admin/meal/save-user-meal", {
+        method: "POST",
+        body: { userId: mealPlan?.userId }
+      });
+      if (result.success) {
+        toast.dismiss("meal-save");
+        onSave();
+        toast.success("Meal saved successfully!");
+      }
+    } catch (error) {
+      console.error("Failed to update meal plan:", error);
+      toast.error("Failed to update meal plan. Please try again.");
+      toast.dismiss("meal-save");
+      return;
+    }
   };
 
   return (
@@ -309,24 +324,21 @@ export default function UserMealPlanEditForm({
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative ${
-                  hasMeals
-                    ? ` ${
-                        isSelected
-                          ? "bg-[#EC1D13] text-white border-[#EC1D13]"
-                          : "bg-green-100 text-green-800 border-green-300"
-                      }`
+                className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative ${hasMeals
+                  ? ` ${isSelected
+                    ? "bg-[#EC1D13] text-white border-[#EC1D13]"
                     : "bg-green-100 text-green-800 border-green-300"
-                }`}
+                  }`
+                  : "bg-green-100 text-green-800 border-green-300"
+                  }`}
               >
                 <span>Day {day}</span>
                 {hasMeals && dayData && (
                   <span
-                    className={`text-xs rounded-full px-2 py-1 ${
-                      isSelected
-                        ? "bg-white text-[#EC1D13]"
-                        : "bg-green-500 text-white"
-                    }`}
+                    className={`text-xs rounded-full px-2 py-1 ${isSelected
+                      ? "bg-white text-[#EC1D13]"
+                      : "bg-green-500 text-white"
+                      }`}
                   >
                     {dayData.mealOptions?.length || 0}
                   </span>
@@ -346,11 +358,10 @@ export default function UserMealPlanEditForm({
               <button
                 key={mealType}
                 onClick={() => setSelectedMealType(mealType)}
-                className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative capitalize ${
-                  isSelected
-                    ? "bg-[#EC1D13] text-white border-[#EC1D13]"
-                    : "bg-white text-[#171616] border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`px-6 py-2 rounded-lg border font-medium transition-colors flex items-center space-x-2 relative capitalize ${isSelected
+                  ? "bg-[#EC1D13] text-white border-[#EC1D13]"
+                  : "bg-white text-[#171616] border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 <span>{mealType}</span>
                 {mealCount > 0 && (
