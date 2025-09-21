@@ -47,8 +47,6 @@ export default function PersonalizedEditForm({
         setFormData(workoutPlan)
     }, [workoutPlan])
 
-
-
     // Handle category change
     const handleDayCategoryChange = (day: number, category: string) => {
         setFormData((prev) => {
@@ -57,7 +55,6 @@ export default function PersonalizedEditForm({
                     return {
                         ...d,
                         category,
-                        // Don't filter out exercises - keep all previously selected exercises
                     }
                 }
                 return d
@@ -67,6 +64,37 @@ export default function PersonalizedEditForm({
                 days: updatedDays,
             }
         })
+    }
+
+    // Handle delete day
+    const handleDeleteDay = (dayToDelete: number) => {
+        if (formData.days.length <= 1) {
+            toast.error("Cannot delete the last remaining day")
+            return
+        }
+
+        setFormData((prev) => {
+            const updatedDays = prev.days
+                .filter((d) => d.dayNumber !== dayToDelete)
+                .map((d, index) => ({
+                    ...d,
+                    dayNumber: index + 1, // Renumber days sequentially
+                }))
+
+            return {
+                ...prev,
+                days: updatedDays,
+            }
+        })
+
+        // Adjust active day if necessary
+        if (activeDay === dayToDelete) {
+            setActiveDay(1) // Switch to day 1 if deleting current active day
+        } else if (activeDay > dayToDelete) {
+            setActiveDay(activeDay - 1) // Adjust active day number after deletion
+        }
+
+        toast.success(`Day ${dayToDelete} deleted successfully`)
     }
 
     // Fetch categories
@@ -140,7 +168,6 @@ export default function PersonalizedEditForm({
             return
         }
     }
-
 
     const currentDay = formData.days.find((day) => day.dayNumber === activeDay)
 
@@ -278,19 +305,34 @@ export default function PersonalizedEditForm({
                                 </div>
                             )}
 
-                            <div className="flex justify-start pt-8">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (activeDay < formData.days.length) {
-                                            setActiveDay(activeDay + 1)
-                                        }
-                                    }}
-                                    disabled={activeDay >= formData.days.length}
-                                    className="px-8 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl"
-                                >
-                                    Next Day
-                                </button>
+                            <div className="flex justify-between items-center pt-8">
+                                <div className="flex space-x-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (activeDay < formData.days.length) {
+                                                setActiveDay(activeDay + 1)
+                                            }
+                                        }}
+                                        disabled={activeDay >= formData.days.length}
+                                        className="px-8 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl"
+                                    >
+                                        Next Day
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteDay(activeDay)}
+                                        disabled={formData.days.length <= 1}
+                                        className="px-6 py-3 bg-red-100 text-red-600 border border-red-300 rounded-lg hover:bg-red-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md flex items-center space-x-2"
+                                        title={formData.days.length <= 1 ? "Cannot delete the last remaining day" : `Delete Day ${activeDay}`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        <span>Delete Day</span>
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Action Buttons */}

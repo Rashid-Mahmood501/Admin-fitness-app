@@ -54,9 +54,5 @@ export interface WorkoutPlansResponse {
 }
 
 export default function WorkoutPlansPage() {
-
-
-    return (
-        <PersonalizedExercises />
-    )
+    return <PersonalizedExercises />
 }
