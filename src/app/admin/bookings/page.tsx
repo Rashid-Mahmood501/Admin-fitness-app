@@ -28,7 +28,7 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await fetchWrapper("/admin/meeting/all");  
+      const response = await fetchWrapper("/admin/meeting/all");
       setBookings(
         response.data.map((item: any) => ({
           id: item._id,
@@ -47,8 +47,10 @@ export default function BookingsPage() {
     }
   };
 
+  console.log("All bookings:", bookings);
+
   const filterBookings = bookings.filter((booking: Booking) => {
-    const bookingDate = new Date(booking._rawDate);
+    const bookingDate = new Date(booking._rawDate + "T00:00:00");
     return (
       bookingDate.toISOString().slice(0, 10) ===
       (value instanceof Date
@@ -107,7 +109,7 @@ export default function BookingsPage() {
             }}
             tileContent={({ date, view }) => {
               if (view === "month") {
-                const dateString = date.toISOString().slice(0, 10);
+                const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
                 if (meetingDates.has(dateString)) {
                   return (
                     <span
@@ -126,6 +128,7 @@ export default function BookingsPage() {
               }
               return null;
             }}
+
           />
         </div>
         <div>
