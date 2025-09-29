@@ -169,10 +169,10 @@ export default function PersonalizedExercises() {
                                                 {plan.userId.gender === "male" ? "Male" : "Female"}
                                             </span>
                                             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded font-medium">
-                                                {plan.userId.weight}KG
+                                                {plan.userId.weight}lb
                                             </span>
                                             <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded font-medium">
-                                                {(plan.userId.height / 30.48).toFixed(1)}
+                                                {(plan.userId.height / 30.48).toFixed(1)} ft
                                             </span>
                                         </div>
                                     </div>

@@ -77,10 +77,10 @@ export default function MealPlanList({
                       item?.userId?.gender?.slice(1)}
                   </span>
                   <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
-                    {item?.userId?.weight} KG
+                    {item?.userId?.weight} lb
                   </span>
                   <span className="px-2 py-1 bg-black text-white text-xs rounded-full">
-                    {item?.userId?.height} CM
+                    {item?.userId?.height} Feet
                   </span>
                 </div>
               </div>
