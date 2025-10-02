@@ -184,7 +184,7 @@ export default function PersonalizedExercises() {
                                 {/* Workout Details */}
                                 <div className="space-y-3 mb-4 border-t border-gray-400 pt-4">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Days want to workout</span>
+                                        <span className="text-sm text-gray-600">Workout days (as selected by the user)</span>
                                         <span className="text-sm font-semibold text-gray-900">Activity level</span>
                                     </div>
                                     <div className="flex justify-between items-center">
